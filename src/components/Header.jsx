@@ -1,0 +1,248 @@
+import React, { useState, useEffect, useRef } from 'react';
+import {
+  Citrus, PlusCircle, Sun, Moon, BarChart2, BookOpen,
+  LogOut, UserCheck, Smartphone, RefreshCw, Menu, X,
+  TrendingUp, Wallet
+} from 'lucide-react';
+
+export default function Header({
+  activeTab,
+  setActiveTab,
+  onOpenAddModal,
+  onOpenSmsModal,
+  theme,
+  toggleTheme,
+  onResetData,
+  currentUser,
+  onLogout
+}) {
+  const [drawerOpen, setDrawerOpen] = useState(false);
+
+  // Close drawer on Escape
+  useEffect(() => {
+    const onKey = (e) => { if (e.key === 'Escape') setDrawerOpen(false); };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, []);
+
+  // Lock body scroll when drawer is open
+  useEffect(() => {
+    if (drawerOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => { document.body.style.overflow = ''; };
+  }, [drawerOpen]);
+
+  const navigate = (tab) => {
+    setActiveTab(tab);
+    setDrawerOpen(false);
+  };
+
+  return (
+    <>
+      {/* ── TOP HEADER BAR ─────────────────────────── */}
+      <header className="header-bar">
+        <div className="header-container">
+
+          {/* Left: Hamburger + Brand */}
+          <div className="header-left">
+            <button
+              className="icon-btn hamburger-btn"
+              onClick={() => setDrawerOpen(true)}
+              aria-label="Mở menu"
+            >
+              <Menu size={20} />
+            </button>
+
+            <div className="header-brand">
+              <div className="brand-icon">
+                <Citrus size={20} color="#FFFFFF" />
+              </div>
+              <div className="brand-text">
+                <h1>JuiceLedger</h1>
+              </div>
+            </div>
+          </div>
+
+          {/* Center: Nav Tabs (desktop only) */}
+          <nav className="header-nav desktop-nav">
+            <button
+              className={`nav-btn ${activeTab === 'dashboard' ? 'active' : ''}`}
+              onClick={() => setActiveTab('dashboard')}
+            >
+              <BarChart2 size={15} />
+              <span>Thống Kê</span>
+            </button>
+            <button
+              className={`nav-btn ${activeTab === 'ledger' ? 'active' : ''}`}
+              onClick={() => setActiveTab('ledger')}
+            >
+              <BookOpen size={15} />
+              <span>Sổ Thu Chi</span>
+            </button>
+          </nav>
+
+          {/* Right: Actions */}
+          <div className="header-actions">
+            <button
+              className="btn-primary btn-quick-add"
+              onClick={onOpenAddModal}
+            >
+              <PlusCircle size={15} />
+              <span className="quick-add-text">Ghi Thu/Chi</span>
+            </button>
+
+            <button
+              className="btn-secondary btn-sms-action"
+              onClick={onOpenSmsModal}
+              title="SMS Banking tự động"
+            >
+              <Smartphone size={15} color="var(--primary-600)" />
+              <span className="btn-sms-text">SMS Bank</span>
+            </button>
+
+            {currentUser && (
+              <div className="user-profile-badge desktop-only" title={`Đang đăng nhập: ${currentUser.fullName}`}>
+                <UserCheck size={14} color="var(--primary-500)" />
+                <span>{currentUser.fullName}</span>
+              </div>
+            )}
+
+            <button
+              className="icon-btn"
+              onClick={toggleTheme}
+              title={theme === 'dark' ? 'Chuyển sáng' : 'Chuyển tối'}
+            >
+              {theme === 'dark'
+                ? <Sun size={16} color="#FACC15" />
+                : <Moon size={16} color="#475569" />
+              }
+            </button>
+          </div>
+        </div>
+      </header>
+
+      {/* ── LEFT DRAWER ───────────────────────────── */}
+      {/* Backdrop */}
+      <div
+        className={`drawer-backdrop ${drawerOpen ? 'open' : ''}`}
+        onClick={() => setDrawerOpen(false)}
+        aria-hidden="true"
+      />
+
+      {/* Drawer Panel */}
+      <aside className={`drawer-panel ${drawerOpen ? 'open' : ''}`} aria-label="Menu điều hướng">
+
+        {/* Drawer Header */}
+        <div className="drawer-header">
+          <div className="drawer-brand">
+            <div className="brand-icon">
+              <Citrus size={20} color="#FFFFFF" />
+            </div>
+            <span className="drawer-brand-name">JuiceLedger</span>
+          </div>
+          <button
+            className="icon-btn drawer-close-btn"
+            onClick={() => setDrawerOpen(false)}
+            aria-label="Đóng menu"
+          >
+            <X size={18} />
+          </button>
+        </div>
+
+        {/* User Info */}
+        {currentUser && (
+          <div className="drawer-user-info">
+            <div className="drawer-user-avatar">
+              <UserCheck size={20} color="var(--primary-500)" />
+            </div>
+            <div className="drawer-user-detail">
+              <span className="drawer-user-name">{currentUser.fullName}</span>
+              <span className="drawer-user-role">Chủ quán</span>
+            </div>
+          </div>
+        )}
+
+        {/* Nav Links */}
+        <nav className="drawer-nav">
+          <p className="drawer-section-label">ĐIỀU HƯỚNG</p>
+
+          <button
+            className={`drawer-nav-item ${activeTab === 'dashboard' ? 'active' : ''}`}
+            onClick={() => navigate('dashboard')}
+          >
+            <div className="drawer-nav-icon">
+              <TrendingUp size={18} />
+            </div>
+            <span>Thống Kê Tài Chính</span>
+          </button>
+
+          <button
+            className={`drawer-nav-item ${activeTab === 'ledger' ? 'active' : ''}`}
+            onClick={() => navigate('ledger')}
+          >
+            <div className="drawer-nav-icon">
+              <BookOpen size={18} />
+            </div>
+            <span>Sổ Thu Chi</span>
+          </button>
+        </nav>
+
+        {/* Quick Actions */}
+        <div className="drawer-actions">
+          <p className="drawer-section-label">THAO TÁC NHANH</p>
+
+          <button
+            className="drawer-action-btn drawer-action-primary"
+            onClick={() => { setDrawerOpen(false); onOpenAddModal(); }}
+          >
+            <PlusCircle size={17} />
+            <span>Ghi Thu / Chi</span>
+          </button>
+
+          <button
+            className="drawer-action-btn"
+            onClick={() => { setDrawerOpen(false); onOpenSmsModal(); }}
+          >
+            <Smartphone size={17} />
+            <span>SMS Banking</span>
+          </button>
+
+          <button
+            className="drawer-action-btn"
+            onClick={toggleTheme}
+          >
+            {theme === 'dark'
+              ? <Sun size={17} color="#FACC15" />
+              : <Moon size={17} />
+            }
+            <span>{theme === 'dark' ? 'Chuyển giao diện sáng' : 'Chuyển giao diện tối'}</span>
+          </button>
+        </div>
+
+        {/* Bottom: Danger Zone */}
+        <div className="drawer-footer">
+          <button
+            className="drawer-action-btn drawer-action-subtle"
+            onClick={() => { setDrawerOpen(false); onResetData(); }}
+          >
+            <RefreshCw size={16} />
+            <span>Tải lại dữ liệu mẫu</span>
+          </button>
+
+          {currentUser && (
+            <button
+              className="drawer-action-btn drawer-action-danger"
+              onClick={() => { setDrawerOpen(false); onLogout(); }}
+            >
+              <LogOut size={17} />
+              <span>Đăng xuất</span>
+            </button>
+          )}
+        </div>
+      </aside>
+    </>
+  );
+}
