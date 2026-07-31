@@ -1,10 +1,18 @@
-// Authentication Service for JuiceLedger
-// Manages persistent login sessions, quick PIN login, and default shop owner account
+import { db, seedInitialData } from './db';
 
 const SESSION_KEY = 'jl_auth_session';
 const PIN_KEY = 'jl_user_pin';
 
 export const authService = {
+  // Ensure DB is initialized before auth actions
+  async init() {
+    try {
+      await seedInitialData();
+    } catch (err) {
+      console.error('Error initializing auth db:', err);
+    }
+  },
+
   // Check if active valid session exists
   getSession() {
     try {
@@ -17,14 +25,117 @@ export const authService = {
     }
   },
 
+  // Register a new user account
+  async registerUser({ username, fullName, password, confirmPassword, role = 'OWNER', phone = '', email = '' }) {
+    await this.init();
+
+    // 1. Validation checks
+    const cleanUsername = (username || '').trim().toLowerCase();
+    const cleanFullName = (fullName || '').trim();
+    const cleanPhone = (phone || '').trim();
+    const cleanEmail = (email || '').trim();
+
+    if (!cleanUsername) {
+      throw new Error('Vui lòng nhập tên đăng nhập');
+    }
+
+    if (cleanUsername.length < 3) {
+      throw new Error('Tên đăng nhập phải có ít nhất 3 ký tự');
+    }
+
+    if (!/^[a-zA-Z0-9_]+$/.test(cleanUsername)) {
+      throw new Error('Tên đăng nhập chỉ chứa chữ cái, chữ số và dấu gạch dưới (_)');
+    }
+
+    if (!cleanFullName) {
+      throw new Error('Vui lòng nhập họ và tên');
+    }
+
+    if (cleanFullName.length < 2) {
+      throw new Error('Họ và tên quá ngắn');
+    }
+
+    if (!password || password.length < 6) {
+      throw new Error('Mật khẩu phải chứa ít nhất 6 ký tự');
+    }
+
+    if (password !== confirmPassword) {
+      throw new Error('Mật khẩu xác nhận không trùng khớp');
+    }
+
+    if (cleanPhone && !/^[0-9]{9,11}$/.test(cleanPhone)) {
+      throw new Error('Số điện thoại không hợp lệ (gồm 9 - 11 chữ số)');
+    }
+
+    // 2. Check if username already exists in DB
+    const existingUser = await db.users.where('username').equalsIgnoreCase(cleanUsername).first();
+    if (existingUser) {
+      throw new Error(`Tên đăng nhập "${cleanUsername}" đã được sử dụng`);
+    }
+
+    // 3. Create user object
+    const newUser = {
+      username: cleanUsername,
+      fullName: cleanFullName,
+      password: password,
+      role: role || 'OWNER',
+      phone: cleanPhone,
+      email: cleanEmail,
+      created_at: new Date().toISOString()
+    };
+
+    // 4. Save to IndexedDB
+    await db.users.add(newUser);
+
+    // 5. Create session object
+    const session = {
+      user: {
+        username: newUser.username,
+        fullName: newUser.fullName,
+        role: newUser.role,
+        phone: newUser.phone,
+        email: newUser.email
+      },
+      token: 'token_' + Date.now()
+    };
+
+    // Save session automatically
+    localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+
+    return session;
+  },
+
   // Log in with Username / Password
   async loginWithPassword(username, password, rememberMe = true) {
-    // Default Owner account: admin / 123456
-    if ((username === 'admin' || username === 'quan') && password === '123456') {
+    await this.init();
+
+    const cleanUsername = (username || '').trim().toLowerCase();
+
+    // Search in IndexedDB users table first
+    const dbUser = await db.users.where('username').equalsIgnoreCase(cleanUsername).first();
+    if (dbUser && dbUser.password === password) {
       const session = {
         user: {
-          username: username,
-          fullName: 'Chủ Quán Nước Ép',
+          username: dbUser.username,
+          fullName: dbUser.fullName,
+          role: dbUser.role,
+          phone: dbUser.phone || '',
+          email: dbUser.email || ''
+        },
+        token: 'token_' + Date.now()
+      };
+      if (rememberMe) {
+        localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+      }
+      return session;
+    }
+
+    // Fallback default Owner account: admin / 123456
+    if ((cleanUsername === 'admin' || cleanUsername === 'quan') && password === '123456') {
+      const session = {
+        user: {
+          username: cleanUsername,
+          fullName: cleanUsername === 'quan' ? 'Quản Lý Cửa Hàng' : 'Chủ Quán Nước Ép',
           role: 'OWNER'
         },
         token: 'token_' + Date.now()
@@ -35,11 +146,11 @@ export const authService = {
       return session;
     }
 
-    // Demo staff account: nhanvien / 123456
-    if (username === 'nhanvien' && password === '123456') {
+    // Fallback demo staff account: nhanvien / 123456
+    if (cleanUsername === 'nhanvien' && password === '123456') {
       const session = {
         user: {
-          username: username,
+          username: cleanUsername,
           fullName: 'Nhân Viên Thu Ngân',
           role: 'STAFF'
         },
@@ -91,3 +202,4 @@ export const authService = {
     localStorage.removeItem(SESSION_KEY);
   }
 };
+

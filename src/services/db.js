@@ -8,8 +8,47 @@ db.version(1).stores({
   transactions: '++id, type, category_id, category_name, amount, payment_source, note, transaction_date, created_at'
 });
 
-// Seed default categories and initial demo data if empty
+db.version(2).stores({
+  categories: '++id, name, type, icon, color',
+  transactions: '++id, type, category_id, category_name, amount, payment_source, note, transaction_date, created_at',
+  users: '++id, &username, password, fullName, role, phone, email, created_at'
+});
+
+// Seed default categories, initial demo data and default users if empty
 export async function seedInitialData() {
+  const countUsers = await db.users.count();
+  if (countUsers === 0) {
+    await db.users.bulkAdd([
+      {
+        username: 'admin',
+        password: '123456',
+        fullName: 'Chủ Quán Nước Ép',
+        role: 'OWNER',
+        phone: '0901234567',
+        email: 'admin@juiceledger.com',
+        created_at: new Date().toISOString()
+      },
+      {
+        username: 'quan',
+        password: '123456',
+        fullName: 'Quản Lý Cửa Hàng',
+        role: 'OWNER',
+        phone: '0907654321',
+        email: 'quanly@juiceledger.com',
+        created_at: new Date().toISOString()
+      },
+      {
+        username: 'nhanvien',
+        password: '123456',
+        fullName: 'Nhân Viên Thu Ngân',
+        role: 'STAFF',
+        phone: '0988888888',
+        email: 'nhanvien@juiceledger.com',
+        created_at: new Date().toISOString()
+      }
+    ]);
+  }
+
   const countCategories = await db.categories.count();
   if (countCategories === 0) {
     await db.categories.bulkAdd([

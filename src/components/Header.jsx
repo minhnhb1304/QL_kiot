@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Citrus, PlusCircle, Sun, Moon, BarChart2, BookOpen,
   LogOut, UserCheck, Smartphone, RefreshCw, Menu, X,
-  TrendingUp, Wallet
+  TrendingUp
 } from 'lucide-react';
 
 export default function Header({
@@ -106,7 +106,7 @@ export default function Header({
             {currentUser && (
               <div className="user-profile-badge desktop-only" title={`Đang đăng nhập: ${currentUser.fullName}`}>
                 <UserCheck size={14} color="var(--primary-500)" />
-                <span>{currentUser.fullName}</span>
+                <span>{currentUser.fullName} ({currentUser.role === 'STAFF' ? 'Nhân Viên' : 'Chủ Quán'})</span>
               </div>
             )}
 
@@ -160,7 +160,7 @@ export default function Header({
             </div>
             <div className="drawer-user-detail">
               <span className="drawer-user-name">{currentUser.fullName}</span>
-              <span className="drawer-user-role">Chủ quán</span>
+              <span className="drawer-user-role">{currentUser.role === 'STAFF' ? 'Nhân Viên Thu Ngân' : 'Chủ Quán / Quản Lý'}</span>
             </div>
           </div>
         )}
