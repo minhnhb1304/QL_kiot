@@ -7,6 +7,9 @@ import TransactionFormModal from './components/TransactionFormModal';
 import SmsAutomationModal from './components/SmsAutomationModal';
 import { storageService } from './services/storageService';
 import { authService } from './services/authService';
+import ConfirmDialog from './components/ConfirmDialog';
+import Toast from './components/Toast';
+import ErrorBoundary from './components/ErrorBoundary';
 import './styles/global.css';
 import './styles/dashboard.css';
 import './styles/mobile.css';
@@ -17,6 +20,11 @@ export default function App() {
   const [theme, setTheme] = useState(localStorage.getItem('jl_theme') || 'light');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSmsModalOpen, setIsSmsModalOpen] = useState(false);
+
+  const [toast, setToast] = useState(null);
+  const [confirmDialog, setConfirmDialog] = useState(null);
+
+  const showToast = (message, type = 'success') => setToast({ message, type });
 
   const [categories, setCategories] = useState([]);
   const [transactions, setTransactions] = useState([]);
@@ -93,27 +101,52 @@ export default function App() {
   const handleSaveTransaction = async (newTx) => {
     await storageService.addTransaction(newTx);
     await loadData();
+    showToast('Đã thêm giao dịch', 'success');
   };
 
   // Handle parsing & processing SMS Banking text
   const handleProcessSms = async (smsText, sender) => {
-    const result = await storageService.parseAndProcessSms(smsText, sender);
-    await loadData();
-    return result;
+    try {
+      const result = await storageService.parseAndProcessSms(smsText, sender);
+      await loadData();
+      showToast('Đã xử lý tin nhắn thành công', 'success');
+      return result;
+    } catch (err) {
+      showToast(err.message || 'Lỗi khi xử lý tin nhắn', 'error');
+      throw err;
+    }
   };
 
   // Handle deleting transaction
-  const handleDeleteTransaction = async (id) => {
-    await storageService.deleteTransaction(id);
-    await loadData();
+  const handleDeleteTransaction = (id) => {
+    setConfirmDialog({
+      title: 'Xóa giao dịch',
+      message: 'Bạn có chắc chắn muốn xóa giao dịch này không?',
+      variant: 'danger',
+      onConfirm: async () => {
+        await storageService.deleteTransaction(id);
+        await loadData();
+        setConfirmDialog(null);
+        showToast('Đã xóa giao dịch', 'success');
+      },
+      onCancel: () => setConfirmDialog(null)
+    });
   };
 
   // Reset demo data
-  const handleResetData = async () => {
-    if (confirm('Bạn có muốn tải lại dữ liệu mẫu cho quán nước ép không?')) {
-      await storageService.resetData();
-      await loadData();
-    }
+  const handleResetData = () => {
+    setConfirmDialog({
+      title: 'Khôi phục dữ liệu gốc',
+      message: 'Bạn có muốn tải lại dữ liệu mẫu cho quán nước ép không?',
+      variant: 'danger',
+      onConfirm: async () => {
+        await storageService.resetData();
+        await loadData();
+        setConfirmDialog(null);
+        showToast('Đã khôi phục dữ liệu', 'success');
+      },
+      onCancel: () => setConfirmDialog(null)
+    });
   };
 
   // Handle Login & Logout
@@ -132,7 +165,8 @@ export default function App() {
   }
 
   return (
-    <div className="app-root">
+    <ErrorBoundary>
+      <div className="app-root">
       {/* Top Header Navigation */}
       <Header
         activeTab={activeTab}
@@ -179,6 +213,17 @@ export default function App() {
         onClose={() => setIsSmsModalOpen(false)}
         onSmsProcessed={handleProcessSms}
       />
+
+      <Toast toast={toast} onDismiss={() => setToast(null)} />
+      <ConfirmDialog
+        isOpen={!!confirmDialog}
+        title={confirmDialog?.title}
+        message={confirmDialog?.message}
+        variant={confirmDialog?.variant}
+        onConfirm={confirmDialog?.onConfirm}
+        onCancel={confirmDialog?.onCancel}
+      />
     </div>
+    </ErrorBoundary>
   );
 }

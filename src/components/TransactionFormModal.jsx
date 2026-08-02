@@ -22,7 +22,6 @@ export default function TransactionFormModal({ isOpen, onClose, onSave, categori
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!amount || Number(amount) <= 0) {
-      alert('Vui lòng nhập số tiền hợp lệ');
       return;
     }
 

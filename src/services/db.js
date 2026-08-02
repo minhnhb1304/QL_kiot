@@ -1,5 +1,12 @@
 import Dexie from 'dexie';
 
+export async function hashPassword(password) {
+  const msgBuffer = new TextEncoder().encode(password);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
 // Initialize IndexedDB database for JuiceLedger
 export const db = new Dexie('JuiceLedgerDB');
 
@@ -14,6 +21,12 @@ db.version(2).stores({
   users: '++id, &username, password, fullName, role, phone, email, created_at'
 });
 
+db.version(3).stores({
+  categories: '++id, name, type, icon, color',
+  transactions: '++id, type, category_id, category_name, amount, payment_source, note, transaction_date, created_at',
+  users: '++id, &username, passwordHash, fullName, role, phone, email, created_at'
+});
+
 // Seed default categories, initial demo data and default users if empty
 export async function seedInitialData() {
   const countUsers = await db.users.count();
@@ -21,7 +34,7 @@ export async function seedInitialData() {
     await db.users.bulkAdd([
       {
         username: 'admin',
-        password: '123456',
+        passwordHash: '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92',
         fullName: 'Chủ Quán Nước Ép',
         role: 'OWNER',
         phone: '0901234567',
@@ -30,7 +43,7 @@ export async function seedInitialData() {
       },
       {
         username: 'quan',
-        password: '123456',
+        passwordHash: '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92',
         fullName: 'Quản Lý Cửa Hàng',
         role: 'OWNER',
         phone: '0907654321',
@@ -39,7 +52,7 @@ export async function seedInitialData() {
       },
       {
         username: 'nhanvien',
-        password: '123456',
+        passwordHash: '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92',
         fullName: 'Nhân Viên Thu Ngân',
         role: 'STAFF',
         phone: '0988888888',

@@ -1,4 +1,4 @@
-import { db, seedInitialData } from './db';
+import { db, seedInitialData, hashPassword } from './db';
 
 const SESSION_KEY = 'jl_auth_session';
 const PIN_KEY = 'jl_user_pin';
@@ -77,7 +77,7 @@ export const authService = {
     const newUser = {
       username: cleanUsername,
       fullName: cleanFullName,
-      password: password,
+      passwordHash: await hashPassword(password),
       role: role || 'OWNER',
       phone: cleanPhone,
       email: cleanEmail,
@@ -113,53 +113,24 @@ export const authService = {
 
     // Search in IndexedDB users table first
     const dbUser = await db.users.where('username').equalsIgnoreCase(cleanUsername).first();
-    if (dbUser && dbUser.password === password) {
-      const session = {
-        user: {
-          username: dbUser.username,
-          fullName: dbUser.fullName,
-          role: dbUser.role,
-          phone: dbUser.phone || '',
-          email: dbUser.email || ''
-        },
-        token: 'token_' + Date.now()
-      };
-      if (rememberMe) {
-        localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+    if (dbUser) {
+      const inputHash = await hashPassword(password);
+      if (dbUser.passwordHash === inputHash) {
+        const session = {
+          user: {
+            username: dbUser.username,
+            fullName: dbUser.fullName,
+            role: dbUser.role,
+            phone: dbUser.phone || '',
+            email: dbUser.email || ''
+          },
+          token: 'token_' + Date.now()
+        };
+        if (rememberMe) {
+          localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+        }
+        return session;
       }
-      return session;
-    }
-
-    // Fallback default Owner account: admin / 123456
-    if ((cleanUsername === 'admin' || cleanUsername === 'quan') && password === '123456') {
-      const session = {
-        user: {
-          username: cleanUsername,
-          fullName: cleanUsername === 'quan' ? 'Quản Lý Cửa Hàng' : 'Chủ Quán Nước Ép',
-          role: 'OWNER'
-        },
-        token: 'token_' + Date.now()
-      };
-      if (rememberMe) {
-        localStorage.setItem(SESSION_KEY, JSON.stringify(session));
-      }
-      return session;
-    }
-
-    // Fallback demo staff account: nhanvien / 123456
-    if (cleanUsername === 'nhanvien' && password === '123456') {
-      const session = {
-        user: {
-          username: cleanUsername,
-          fullName: 'Nhân Viên Thu Ngân',
-          role: 'STAFF'
-        },
-        token: 'token_' + Date.now()
-      };
-      if (rememberMe) {
-        localStorage.setItem(SESSION_KEY, JSON.stringify(session));
-      }
-      return session;
     }
 
     throw new Error('Tài khoản hoặc mật khẩu không chính xác');

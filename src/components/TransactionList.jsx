@@ -117,9 +117,7 @@ export default function TransactionList({ transactions, onDeleteTransaction, onO
                         <button
                           className="icon-btn btn-delete-sm"
                           title="Xóa"
-                          onClick={() => {
-                            if (confirm('Xóa giao dịch này?')) onDeleteTransaction(item.id);
-                          }}
+                          onClick={() => onDeleteTransaction(item.id)}
                         >
                           <Trash2 size={14} />
                         </button>
@@ -166,9 +164,7 @@ export default function TransactionList({ transactions, onDeleteTransaction, onO
                         <button
                           className="icon-btn btn-delete-sm"
                           title="Xóa"
-                          onClick={() => {
-                            if (confirm('Xóa giao dịch này?')) onDeleteTransaction(item.id);
-                          }}
+                          onClick={() => onDeleteTransaction(item.id)}
                         >
                           <Trash2 size={14} />
                         </button>
@@ -229,11 +225,7 @@ export default function TransactionList({ transactions, onDeleteTransaction, onO
                           <button
                             className="icon-btn btn-delete"
                             title="Xóa giao dịch này"
-                            onClick={() => {
-                              if (confirm('Xóa giao dịch này?')) {
-                                onDeleteTransaction(item.id);
-                              }
-                            }}
+                            onClick={() => onDeleteTransaction(item.id)}
                           >
                             <Trash2 size={16} />
                           </button>
@@ -274,9 +266,7 @@ export default function TransactionList({ transactions, onDeleteTransaction, onO
                       <button
                         className="icon-btn btn-delete-sm"
                         title="Xóa"
-                        onClick={() => {
-                          if (confirm('Xóa giao dịch này?')) onDeleteTransaction(item.id);
-                        }}
+                        onClick={() => onDeleteTransaction(item.id)}
                       >
                         <Trash2 size={14} />
                       </button>
