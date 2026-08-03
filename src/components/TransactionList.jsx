@@ -5,6 +5,28 @@ export default function TransactionList({ transactions, onDeleteTransaction, onO
   const [searchTerm, setSearchTerm] = useState('');
   const [viewMode, setViewMode] = useState('ALL'); // 'ALL', 'SPLIT', 'IN', 'OUT'
   const [sourceFilter, setSourceFilter] = useState('ALL');
+  const [dateFilter, setDateFilter] = useState('ALL'); // 'ALL', 'MONTH', 'WEEK', 'TODAY', 'MONTH_YYYY-MM'
+
+  // Extract unique months from transactions array in "T7/2026", "T8/2026" format
+  const availableMonths = React.useMemo(() => {
+    const monthMap = new Map();
+    (transactions || []).forEach(t => {
+      if (t.transaction_date) {
+        const parts = t.transaction_date.split('-');
+        if (parts.length >= 2) {
+          const year = parts[0];
+          const month = parseInt(parts[1], 10);
+          const key = `${year}-${parts[1]}`;
+          const label = `T${month}/${year}`;
+          if (!monthMap.has(key)) {
+            monthMap.set(key, { key, label });
+          }
+        }
+      }
+    });
+
+    return Array.from(monthMap.values()).sort((a, b) => b.key.localeCompare(a.key));
+  }, [transactions]);
 
   // Filter transactions in UI
   const filtered = transactions.filter(t => {
@@ -13,9 +35,28 @@ export default function TransactionList({ transactions, onDeleteTransaction, onO
       t.category_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (t.note && t.note.toLowerCase().includes(searchTerm.toLowerCase()));
     
-    if (viewMode === 'IN') return t.type === 'IN' && matchesSource && matchesSearch;
-    if (viewMode === 'OUT') return t.type === 'OUT' && matchesSource && matchesSearch;
-    return matchesSource && matchesSearch;
+    let matchesDate = true;
+    const today = new Date();
+    const todayStr = today.toISOString().split('T')[0];
+
+    if (dateFilter === 'TODAY') {
+      matchesDate = t.transaction_date === todayStr;
+    } else if (dateFilter === 'WEEK') {
+      const d = new Date(today);
+      d.setDate(d.getDate() - 7);
+      const weekAgoStr = d.toISOString().split('T')[0];
+      matchesDate = t.transaction_date >= weekAgoStr && t.transaction_date <= todayStr;
+    } else if (dateFilter === 'MONTH') {
+      const firstDayStr = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split('T')[0];
+      matchesDate = t.transaction_date >= firstDayStr && t.transaction_date <= todayStr;
+    } else if (dateFilter.startsWith('MONTH_')) {
+      const targetYearMonth = dateFilter.replace('MONTH_', '');
+      matchesDate = t.transaction_date && t.transaction_date.startsWith(targetYearMonth);
+    }
+    
+    if (viewMode === 'IN') return t.type === 'IN' && matchesSource && matchesSearch && matchesDate;
+    if (viewMode === 'OUT') return t.type === 'OUT' && matchesSource && matchesSearch && matchesDate;
+    return matchesSource && matchesSearch && matchesDate;
   });
 
   // Separate IN and OUT for SPLIT mode
@@ -57,6 +98,27 @@ export default function TransactionList({ transactions, onDeleteTransaction, onO
 
         {/* View & Filter Mode */}
         <div className="filter-group">
+          {/* Date Range Filter for Ledger */}
+          <select 
+            className="form-select filter-select"
+            value={dateFilter}
+            onChange={e => setDateFilter(e.target.value)}
+          >
+            <option value="ALL">Tất cả thời gian</option>
+            <option value="MONTH">Tháng này</option>
+            <option value="WEEK">7 ngày qua</option>
+            <option value="TODAY">Hôm nay</option>
+            {availableMonths.length > 0 && (
+              <optgroup label="Tháng có dữ liệu">
+                {availableMonths.map(m => (
+                  <option key={m.key} value={`MONTH_${m.key}`}>
+                    {m.label}
+                  </option>
+                ))}
+              </optgroup>
+            )}
+          </select>
+
           <select 
             className="form-select filter-select mode-select"
             value={viewMode}

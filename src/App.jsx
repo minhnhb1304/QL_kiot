@@ -71,6 +71,16 @@ export default function App() {
       return { startDate: firstDay, endDate: todayStr };
     }
 
+    if (dateRange.rangeType && dateRange.rangeType.startsWith('MONTH_')) {
+      const yearMonth = dateRange.rangeType.replace('MONTH_', '');
+      const [yearStr, monthStr] = yearMonth.split('-');
+      const year = parseInt(yearStr, 10);
+      const month = parseInt(monthStr, 10);
+      const firstDay = new Date(year, month - 1, 1).toISOString().split('T')[0];
+      const lastDay = new Date(year, month, 0).toISOString().split('T')[0];
+      return { startDate: firstDay, endDate: lastDay };
+    }
+
     return {}; // ALL
   };
 
@@ -80,10 +90,12 @@ export default function App() {
       const cats = await storageService.getCategories();
       setCategories(cats);
 
-      const filter = getDateRangeFilter();
-      const txs = await storageService.getTransactions(filter);
+      // Load ALL transactions for LedgerPage (independent of Dashboard date range)
+      const txs = await storageService.getTransactions({});
       setTransactions(txs);
 
+      // Load Summary Stats specifically for Dashboard's date range
+      const filter = getDateRangeFilter();
       const s = await storageService.getStats(filter.startDate, filter.endDate);
       setStats(s);
     } catch (err) {
@@ -189,6 +201,7 @@ export default function App() {
             setDateRange={setDateRange}
             theme={theme}
             onOpenAddModal={() => setIsModalOpen(true)}
+            transactions={transactions}
           />
         ) : (
           <LedgerPage

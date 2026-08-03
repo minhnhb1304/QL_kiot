@@ -1,13 +1,12 @@
 import React, { useState } from 'react';
 import {
-  Citrus, KeyRound, Lock, User, AtSign, Phone, Mail,
+  Citrus, Lock, User, AtSign, Phone, Mail,
   Eye, EyeOff, UserPlus, Crown, UserCheck, ShieldCheck, CheckCircle2
 } from 'lucide-react';
 import { authService } from '../services/authService';
 
 export default function LoginPage({ onLoginSuccess }) {
-  const [mode, setMode] = useState('pin'); // 'pin' | 'password' | 'register'
-  const [pin, setPin] = useState('');
+  const [mode, setMode] = useState('password'); // 'password' | 'register'
   
   // Login form state
   const [username, setUsername] = useState('admin');
@@ -33,17 +32,6 @@ export default function LoginPage({ onLoginSuccess }) {
     setMode(newMode);
     setErrorMsg('');
     setSuccessMsg('');
-  };
-
-  const handlePinSubmit = async (e) => {
-    e.preventDefault();
-    setErrorMsg('');
-    try {
-      const session = await authService.loginWithPin(pin);
-      onLoginSuccess(session);
-    } catch (err) {
-      setErrorMsg(err.message);
-    }
   };
 
   const handlePasswordSubmit = async (e) => {
@@ -83,24 +71,6 @@ export default function LoginPage({ onLoginSuccess }) {
     }
   };
 
-  const handlePinDigit = (digit) => {
-    if (pin.length < 6) {
-      const nextPin = pin + digit;
-      setPin(nextPin);
-      setErrorMsg('');
-
-      if (nextPin.length === 4) {
-        authService.loginWithPin(nextPin)
-          .then(session => onLoginSuccess(session))
-          .catch(err => setErrorMsg(err.message));
-      }
-    }
-  };
-
-  const handlePinBackspace = () => {
-    setPin(prev => prev.slice(0, -1));
-  };
-
   return (
     <div className="login-overlay">
       <div className={`login-card card ${mode === 'register' ? 'register-mode' : ''}`}>
@@ -113,16 +83,8 @@ export default function LoginPage({ onLoginSuccess }) {
           <p className="login-subtext">Quản Lý Sổ Thu Chi Quán Nước Ép & Sinh Tố</p>
         </div>
 
-        {/* Mode Selector Tabs (3 Modes: PIN, Login, Register) */}
-        <div className="login-mode-tabs trio-tabs">
-          <button
-            type="button"
-            className={`mode-tab ${mode === 'pin' ? 'active' : ''}`}
-            onClick={() => switchMode('pin')}
-          >
-            <KeyRound size={15} />
-            <span>Mã PIN</span>
-          </button>
+        {/* Mode Selector Tabs (2 Modes: Login, Register) */}
+        <div className="login-mode-tabs">
           <button
             type="button"
             className={`mode-tab ${mode === 'password' ? 'active' : ''}`}
@@ -140,60 +102,6 @@ export default function LoginPage({ onLoginSuccess }) {
             <span>Đăng Ký</span>
           </button>
         </div>
-
-        {errorMsg && (
-          <div className="login-error-alert">
-            <span>{errorMsg}</span>
-          </div>
-        )}
-
-        {successMsg && (
-          <div className="login-success-alert">
-            <CheckCircle2 size={18} />
-            <span>{successMsg}</span>
-          </div>
-        )}
-
-        {/* MODE 1: Quick PIN Login */}
-        {mode === 'pin' && (
-          <form onSubmit={handlePinSubmit} className="login-form">
-            <div className="pin-display-group">
-              <span className="pin-label">Nhập PIN (Mặc định: 1234)</span>
-              <div className="pin-dots">
-                {[0, 1, 2, 3].map(i => (
-                  <div key={i} className={`pin-dot ${pin.length > i ? 'filled' : ''}`} />
-                ))}
-              </div>
-            </div>
-
-            {/* Numeric Keypad for Mobile/Touch */}
-            <div className="keypad-grid">
-              {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(num => (
-                <button
-                  key={num}
-                  type="button"
-                  className="keypad-btn"
-                  onClick={() => handlePinDigit(num.toString())}
-                >
-                  {num}
-                </button>
-              ))}
-              <button type="button" className="keypad-btn btn-clear" onClick={() => setPin('')}>
-                Xóa
-              </button>
-              <button
-                type="button"
-                className="keypad-btn"
-                onClick={() => handlePinDigit('0')}
-              >
-                0
-              </button>
-              <button type="button" className="keypad-btn btn-back" onClick={handlePinBackspace}>
-                ⌫
-              </button>
-            </div>
-          </form>
-        )}
 
         {/* MODE 2: Password Login */}
         {mode === 'password' && (

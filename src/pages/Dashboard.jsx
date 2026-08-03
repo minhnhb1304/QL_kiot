@@ -14,10 +14,36 @@ const RANGE_LABELS = {
 const formatVND = (val) =>
   new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(val || 0);
 
-export default function Dashboard({ stats, dateRange, setDateRange, theme, onOpenAddModal }) {
+export default function Dashboard({ stats, dateRange, setDateRange, theme, onOpenAddModal, transactions = [] }) {
+  // Extract unique months from transactions array in "T7/2026", "T8/2026" format
+  const availableMonths = React.useMemo(() => {
+    const monthMap = new Map();
+    (transactions || []).forEach(t => {
+      if (t.transaction_date) {
+        const parts = t.transaction_date.split('-');
+        if (parts.length >= 2) {
+          const year = parts[0];
+          const month = parseInt(parts[1], 10);
+          const key = `${year}-${parts[1]}`;
+          const label = `T${month}/${year}`;
+          if (!monthMap.has(key)) {
+            monthMap.set(key, { key, label });
+          }
+        }
+      }
+    });
+
+    return Array.from(monthMap.values()).sort((a, b) => b.key.localeCompare(a.key));
+  }, [transactions]);
+
   if (!stats) return <div className="loading">Đang tải dữ liệu...</div>;
 
-  const periodLabel = RANGE_LABELS[dateRange.rangeType] || '';
+  let periodLabel = RANGE_LABELS[dateRange.rangeType] || '';
+  if (!periodLabel && dateRange.rangeType && dateRange.rangeType.startsWith('MONTH_')) {
+    const yearMonth = dateRange.rangeType.replace('MONTH_', '');
+    const [yearStr, monthStr] = yearMonth.split('-');
+    periodLabel = `Tháng T${parseInt(monthStr, 10)}/${yearStr}`;
+  }
 
   return (
     <div className="dashboard-page">
@@ -25,6 +51,7 @@ export default function Dashboard({ stats, dateRange, setDateRange, theme, onOpe
       <div className="dashboard-toolbar card">
         <div className="toolbar-title">
           <h2>Thống Kê Tài Chính</h2>
+          {periodLabel && <span className="toolbar-period-badge">{periodLabel}</span>}
         </div>
         <div className="date-filter-buttons">
           {['TODAY', 'WEEK', 'MONTH', 'ALL'].map((range) => (
@@ -36,6 +63,26 @@ export default function Dashboard({ stats, dateRange, setDateRange, theme, onOpe
               {RANGE_LABELS[range]}
             </button>
           ))}
+
+          {/* Dynamic Month Selector */}
+          {availableMonths.length > 0 && (
+            <select
+              className={`form-select filter-select dash-month-select ${dateRange.rangeType?.startsWith('MONTH_') ? 'active-select' : ''}`}
+              value={dateRange.rangeType?.startsWith('MONTH_') ? dateRange.rangeType : ''}
+              onChange={e => {
+                if (e.target.value) {
+                  setDateRange({ rangeType: e.target.value });
+                }
+              }}
+            >
+              <option value="">Chọn tháng khác...</option>
+              {availableMonths.map(m => (
+                <option key={m.key} value={`MONTH_${m.key}`}>
+                  {m.label}
+                </option>
+              ))}
+            </select>
+          )}
         </div>
       </div>
 

@@ -1,7 +1,6 @@
 import { db, seedInitialData, hashPassword } from './db';
 
 const SESSION_KEY = 'jl_auth_session';
-const PIN_KEY = 'jl_user_pin';
 
 export const authService = {
   // Ensure DB is initialized before auth actions
@@ -22,6 +21,23 @@ export const authService = {
       return session;
     } catch {
       return null;
+    }
+  },
+
+  // Get all registered users for account selection in login UI
+  async getUsers() {
+    await this.init();
+    try {
+      const users = await db.users.toArray();
+      return users.map(u => ({
+        username: u.username,
+        fullName: u.fullName,
+        role: u.role,
+        phone: u.phone || '',
+        email: u.email || ''
+      }));
+    } catch {
+      return [];
     }
   },
 
@@ -134,38 +150,6 @@ export const authService = {
     }
 
     throw new Error('Tài khoản hoặc mật khẩu không chính xác');
-  },
-
-  // Log in with Quick PIN (Default PIN is '1234' or custom set)
-  async loginWithPin(pinCode) {
-    const customPin = localStorage.getItem(PIN_KEY) || '1234';
-    if (pinCode === customPin) {
-      const session = {
-        user: {
-          username: 'quan_pin',
-          fullName: 'Chủ Quán Nước Ép',
-          role: 'OWNER'
-        },
-        token: 'pin_token_' + Date.now()
-      };
-      localStorage.setItem(SESSION_KEY, JSON.stringify(session));
-      return session;
-    }
-    throw new Error('Mã PIN không đúng (Mặc định: 1234)');
-  },
-
-  // Save custom PIN
-  setCustomPin(newPin) {
-    if (!newPin || newPin.length < 4) {
-      throw new Error('Mã PIN phải gồm ít nhất 4 chữ số');
-    }
-    localStorage.setItem(PIN_KEY, newPin);
-    return true;
-  },
-
-  // Get current PIN
-  getCustomPin() {
-    return localStorage.getItem(PIN_KEY) || '1234';
   },
 
   // Logout

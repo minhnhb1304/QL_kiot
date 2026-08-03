@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   Citrus, PlusCircle, Sun, Moon, BarChart2, BookOpen,
-  LogOut, UserCheck, Smartphone, RefreshCw, Menu, X,
+  LogOut, UserCheck, Smartphone, Menu, X,
   TrendingUp
 } from 'lucide-react';
 
@@ -235,14 +235,6 @@ export default function Header({
 
         {/* Bottom: Danger Zone */}
         <div className="drawer-footer">
-          <button
-            className="drawer-action-btn drawer-action-subtle"
-            onClick={() => { setDrawerOpen(false); onResetData(); }}
-          >
-            <RefreshCw size={16} />
-            <span>Tải lại dữ liệu mẫu</span>
-          </button>
-
           {currentUser && (
             <button
               className="drawer-action-btn drawer-action-danger"

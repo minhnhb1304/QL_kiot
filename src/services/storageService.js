@@ -193,11 +193,15 @@ class StorageService {
     };
   }
 
+  // Clear all transaction data
+  async clearAllTransactions() {
+    await this.init();
+    await db.transactions.clear();
+  }
+
   // Clear all data (Reset tool for user)
   async resetData() {
     await db.transactions.clear();
-    await db.categories.clear();
-    await seedInitialData();
   }
 }
 
