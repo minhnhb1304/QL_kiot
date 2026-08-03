@@ -120,6 +120,17 @@ export default function Header({
                 : <Moon size={16} color="#475569" />
               }
             </button>
+
+            {currentUser && (
+              <button
+                className="icon-btn btn-logout-desktop desktop-only"
+                onClick={onLogout}
+                title="Đăng xuất"
+                aria-label="Đăng xuất"
+              >
+                <LogOut size={16} color="#EF4444" />
+              </button>
+            )}
           </div>
         </div>
       </header>
