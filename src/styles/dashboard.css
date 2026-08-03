@@ -642,9 +642,25 @@
   box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
 }
 
-.filter-chip:hover:not(.active) {
-  background-color: var(--border-color);
-  color: var(--text-main);
+.dash-month-select {
+  height: 32px;
+  line-height: 1;
+  padding: 0 1.8rem 0 0.8rem;
+  border-radius: var(--radius-full);
+  font-size: 0.8rem;
+  font-weight: 600;
+  background-color: var(--bg-main);
+  border: 1px solid var(--border-color);
+  color: var(--text-muted) !important;
+  cursor: pointer;
+  min-width: 140px;
+}
+
+.dash-month-select.active-select {
+  background-color: var(--primary-500);
+  color: #FFFFFF !important;
+  border-color: var(--primary-500);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23FFFFFF' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
 }
 
 /* ─────────────────────────────────────────────

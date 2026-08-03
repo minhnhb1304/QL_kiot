@@ -300,12 +300,18 @@ html {
 
   .filter-group {
     width: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
   }
 
   .filter-select {
     max-width: none;
-    flex: 1;
-    font-size: 0.825rem;
+    flex: 1 1 auto;
+    min-width: 110px;
+    font-size: 0.8rem;
+    padding-left: 0.6rem !important;
+    padding-right: 1.6rem !important;
   }
 
   /* Hide non-essential columns on phone */

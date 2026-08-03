@@ -208,14 +208,20 @@ textarea.form-textarea {
   box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
 }
 
-/* Select styling fix */
+/* Select styling fix - Cross-browser & Safari compatibility */
 select.form-select {
+  -webkit-appearance: none;
+  -moz-appearance: none;
   appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2064748B' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2364748B' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
-  background-position: right 0.75rem center;
-  background-size: 16px;
-  padding-right: 2.25rem;
+  background-position: right 0.65rem center;
+  background-size: 14px;
+  padding-right: 1.8rem !important;
+  color: var(--text-main) !important;
+  background-color: var(--bg-surface);
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* Grid Layouts */
