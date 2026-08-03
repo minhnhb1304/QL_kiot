@@ -206,8 +206,14 @@ html {
   }
 
   .filter-chip {
-    padding: 0.35rem 0.65rem;
-    font-size: 0.75rem;
+    padding: 0.4rem 0.75rem;
+    font-size: 0.8rem;
+  }
+
+  .dash-month-select {
+    height: 31px;
+    font-size: 0.8rem;
+    padding-left: 0.75rem;
   }
 }
 

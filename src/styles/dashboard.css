@@ -643,9 +643,9 @@
 }
 
 .dash-month-select {
-  height: 32px;
+  height: 31px;
   line-height: 1;
-  padding: 0 1.8rem 0 0.8rem;
+  padding: 0 1.8rem 0 0.9rem;
   border-radius: var(--radius-full);
   font-size: 0.8rem;
   font-weight: 600;
@@ -654,6 +654,7 @@
   color: var(--text-muted) !important;
   cursor: pointer;
   min-width: 140px;
+  box-sizing: border-box;
 }
 
 .dash-month-select.active-select {
