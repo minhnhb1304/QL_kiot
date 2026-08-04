@@ -152,6 +152,52 @@ export const authService = {
     throw new Error('Tài khoản hoặc mật khẩu không chính xác');
   },
 
+  // Update user profile (fullName, phone, email)
+  async updateUserProfile({ username, fullName, phone, email }) {
+    const cleanFullName = (fullName || '').trim();
+    const cleanPhone = (phone || '').trim();
+    const cleanEmail = (email || '').trim();
+
+    if (!cleanFullName) {
+      throw new Error('Vui lòng nhập họ và tên');
+    }
+    if (cleanFullName.length < 2) {
+      throw new Error('Họ và tên quá ngắn');
+    }
+    if (cleanPhone && !/^[0-9]{9,11}$/.test(cleanPhone)) {
+      throw new Error('Số điện thoại không hợp lệ (gồm 9 - 11 chữ số)');
+    }
+
+    // Update in IndexedDB
+    const dbUser = await db.users.where('username').equalsIgnoreCase(username).first();
+    if (!dbUser) {
+      throw new Error('Không tìm thấy tài khoản');
+    }
+
+    await db.users.update(dbUser.id, {
+      fullName: cleanFullName,
+      phone: cleanPhone,
+      email: cleanEmail
+    });
+
+    // Update session in localStorage
+    const updatedUser = {
+      username: dbUser.username,
+      fullName: cleanFullName,
+      role: dbUser.role,
+      phone: cleanPhone,
+      email: cleanEmail
+    };
+
+    const currentSession = this.getSession();
+    if (currentSession) {
+      currentSession.user = updatedUser;
+      localStorage.setItem(SESSION_KEY, JSON.stringify(currentSession));
+    }
+
+    return currentSession;
+  },
+
   // Logout
   logout() {
     localStorage.removeItem(SESSION_KEY);

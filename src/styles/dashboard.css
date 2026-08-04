@@ -2133,3 +2133,89 @@
 }
 
 /* duplicate .modal-overlay removed — original at line 1178 */
+
+/* ─────────────────────────────────────────────
+   PROFILE EDIT MODAL
+───────────────────────────────────────────── */
+.profile-edit-modal {
+  max-width: 460px;
+}
+
+.profile-edit-modal .modal-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.profile-error-msg {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 0.875rem;
+  border-radius: var(--radius-md, 8px);
+  background-color: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  color: #EF4444;
+  font-size: 0.82rem;
+  font-weight: 500;
+}
+
+.profile-modal-actions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+  padding-top: 0.5rem;
+}
+
+.profile-modal-actions .btn-primary,
+.profile-modal-actions .btn-secondary {
+  min-width: 110px;
+}
+
+.profile-modal-actions .btn-primary {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  justify-content: center;
+}
+
+/* ─────────────────────────────────────────────
+   CLICKABLE USER BADGES
+───────────────────────────────────────────── */
+.clickable-badge {
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.user-profile-badge.clickable-badge {
+  border-radius: var(--radius-md, 8px);
+  padding: 0.35rem 0.65rem;
+}
+
+.user-profile-badge.clickable-badge:hover {
+  background-color: var(--bg-hover, rgba(0, 0, 0, 0.04));
+  box-shadow: 0 0 0 2px var(--primary-100, rgba(99, 102, 241, 0.15));
+}
+
+.drawer-user-info.clickable-badge {
+  border-radius: var(--radius-md, 8px);
+  position: relative;
+}
+
+.drawer-user-info.clickable-badge:hover {
+  background-color: var(--bg-hover, rgba(0, 0, 0, 0.04));
+}
+
+.edit-profile-icon {
+  color: var(--text-muted, #94a3b8);
+  opacity: 0;
+  transition: opacity 0.2s ease, color 0.2s ease;
+  flex-shrink: 0;
+}
+
+.clickable-badge:hover .edit-profile-icon {
+  opacity: 1;
+  color: var(--primary-500, #6366f1);
+}

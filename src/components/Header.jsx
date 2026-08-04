@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
   Citrus, PlusCircle, Sun, Moon, BarChart2, BookOpen,
   LogOut, UserCheck, Smartphone, Menu, X,
-  TrendingUp
+  TrendingUp, Edit2
 } from 'lucide-react';
 
 export default function Header({
@@ -14,7 +14,8 @@ export default function Header({
   toggleTheme,
   onResetData,
   currentUser,
-  onLogout
+  onLogout,
+  onEditProfile
 }) {
   const [drawerOpen, setDrawerOpen] = useState(false);
 
@@ -104,9 +105,17 @@ export default function Header({
             </button>
 
             {currentUser && (
-              <div className="user-profile-badge desktop-only" title={`Đang đăng nhập: ${currentUser.fullName}`}>
+              <div
+                className="user-profile-badge desktop-only clickable-badge"
+                title="Nhấn để chỉnh sửa hồ sơ"
+                onClick={onEditProfile}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => { if (e.key === 'Enter') onEditProfile(); }}
+              >
                 <UserCheck size={14} color="var(--primary-500)" />
-                <span>{currentUser.fullName} ({currentUser.role === 'STAFF' ? 'Nhân Viên' : 'Chủ Quán'})</span>
+                <span>{currentUser.fullName}</span>
+                <Edit2 size={12} className="edit-profile-icon" />
               </div>
             )}
 
@@ -165,7 +174,13 @@ export default function Header({
 
         {/* User Info */}
         {currentUser && (
-          <div className="drawer-user-info">
+          <div
+            className="drawer-user-info clickable-badge"
+            onClick={() => { setDrawerOpen(false); onEditProfile(); }}
+            role="button"
+            tabIndex={0}
+            title="Nhấn để chỉnh sửa hồ sơ"
+          >
             <div className="drawer-user-avatar">
               <UserCheck size={20} color="var(--primary-500)" />
             </div>
@@ -173,6 +188,7 @@ export default function Header({
               <span className="drawer-user-name">{currentUser.fullName}</span>
               <span className="drawer-user-role">{currentUser.role === 'STAFF' ? 'Nhân Viên Thu Ngân' : 'Chủ Quán / Quản Lý'}</span>
             </div>
+            <Edit2 size={14} className="edit-profile-icon" />
           </div>
         )}
 

@@ -5,6 +5,7 @@ import LedgerPage from './pages/LedgerPage';
 import LoginPage from './pages/LoginPage';
 import TransactionFormModal from './components/TransactionFormModal';
 import SmsAutomationModal from './components/SmsAutomationModal';
+import ProfileEditModal from './components/ProfileEditModal';
 import { storageService } from './services/storageService';
 import { authService } from './services/authService';
 import ConfirmDialog from './components/ConfirmDialog';
@@ -20,6 +21,7 @@ export default function App() {
   const [theme, setTheme] = useState(localStorage.getItem('jl_theme') || 'light');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSmsModalOpen, setIsSmsModalOpen] = useState(false);
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
 
   const [toast, setToast] = useState(null);
   const [confirmDialog, setConfirmDialog] = useState(null);
@@ -171,6 +173,15 @@ export default function App() {
     setSession(null);
   };
 
+  // Handle profile update
+  const handleUpdateProfile = async (profileData) => {
+    const updatedSession = await authService.updateUserProfile(profileData);
+    if (updatedSession) {
+      setSession({ ...updatedSession });
+      showToast('Đã cập nhật hồ sơ thành công', 'success');
+    }
+  };
+
   // If user is not logged in, show Login Page
   if (!session) {
     return <LoginPage onLoginSuccess={handleLoginSuccess} />;
@@ -190,6 +201,7 @@ export default function App() {
         onResetData={handleResetData}
         currentUser={session?.user}
         onLogout={handleLogout}
+        onEditProfile={() => setIsProfileModalOpen(true)}
       />
 
       {/* Main Container */}
@@ -225,6 +237,14 @@ export default function App() {
         isOpen={isSmsModalOpen}
         onClose={() => setIsSmsModalOpen(false)}
         onSmsProcessed={handleProcessSms}
+      />
+
+      {/* Profile Edit Modal */}
+      <ProfileEditModal
+        isOpen={isProfileModalOpen}
+        onClose={() => setIsProfileModalOpen(false)}
+        currentUser={session?.user}
+        onSave={handleUpdateProfile}
       />
 
       <Toast toast={toast} onDismiss={() => setToast(null)} />
