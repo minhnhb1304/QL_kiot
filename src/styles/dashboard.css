@@ -2219,3 +2219,124 @@
   opacity: 1;
   color: var(--primary-500, #6366f1);
 }
+
+/* ─────────────────────────────────────────────
+   STORE PROFILE PAGE
+───────────────────────────────────────────── */
+.store-profile-page {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+/* Header card — logo + info */
+.sp-header-card {
+  display: flex;
+  gap: 1.25rem;
+  align-items: center;
+  padding: 1.5rem;
+}
+
+.sp-logo-area {
+  width: 80px;
+  height: 80px;
+  border-radius: var(--radius-lg);
+  background: linear-gradient(135deg, var(--primary-100), var(--primary-50));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 2.5rem;
+  border: 2px dashed var(--border-color);
+  transition: var(--transition-normal);
+  overflow: hidden;
+}
+
+[data-theme="dark"] .sp-logo-area {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(16, 185, 129, 0.05));
+}
+
+.sp-logo-area img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.sp-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.sp-store-name {
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: var(--text-main);
+  margin: 0 0 0.25rem;
+}
+
+.sp-store-name.placeholder-name {
+  color: var(--text-light);
+  font-style: italic;
+}
+
+.sp-slogan {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin-bottom: 0.5rem;
+  font-style: italic;
+}
+
+.sp-address {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+/* Stats / Milestones card */
+.sp-milestones {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem;
+  padding: 1.25rem;
+}
+
+.sp-milestone-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  border-radius: var(--radius-md);
+  background-color: var(--bg-main);
+}
+
+.sp-milestone-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  flex-shrink: 0;
+}
+
+.sp-milestone-label {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  display: block;
+}
+
+.sp-milestone-value {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-main);
+  display: block;
+}
+
+/* Store Profile Edit Modal */
+.store-profile-edit-modal {
+  max-width: 520px;
+}
+

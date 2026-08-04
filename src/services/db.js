@@ -27,10 +27,11 @@ db.version(3).stores({
   users: '++id, &username, passwordHash, fullName, role, phone, email, created_at'
 });
 
-db.version(4).stores({
+db.version(5).stores({
   categories: '++id, name, type, icon, color',
   transactions: '++id, type, category_id, category_name, amount, payment_source, note, transaction_date, created_at',
-  users: '++id, &username, passwordHash, pin, fullName, role, phone, email, created_at'
+  users: '++id, &username, passwordHash, pin, fullName, role, phone, email, created_at',
+  store_profile: '++id, &owner_username'
 });
 
 // Clear all transactions from database
@@ -87,5 +88,24 @@ export async function seedInitialData() {
       { id: 9, name: 'Lương nhân viên', type: 'OUT', icon: '👨‍🍳', color: '#14B8A6' },
       { id: 10, name: 'Chi phí khác', type: 'OUT', icon: '💸', color: '#64748B' }
     ]);
+  }
+
+  const countProfiles = await db.store_profile.count();
+  if (countProfiles === 0) {
+    await db.store_profile.add({
+      owner_username: 'admin',
+      storeName: '',
+      storeSlogan: '',
+      storeLogo: null,
+      storeAddress: '',
+      storePhone: '',
+      businessStartDate: '',
+      appStartDate: new Date().toISOString().split('T')[0],
+      currency: 'VND',
+      monthlyRevenueGoal: 0,
+      financialMonthStartDay: 1,
+      storeNotes: '',
+      updated_at: new Date().toISOString()
+    });
   }
 }

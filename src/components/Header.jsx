@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
   Citrus, PlusCircle, Sun, Moon, BarChart2, BookOpen,
   LogOut, UserCheck, Smartphone, Menu, X,
-  TrendingUp, Edit2
+  TrendingUp, Edit2, Store
 } from 'lucide-react';
 
 export default function Header({
@@ -15,7 +15,8 @@ export default function Header({
   onResetData,
   currentUser,
   onLogout,
-  onEditProfile
+  onEditProfile,
+  storeProfile
 }) {
   const [drawerOpen, setDrawerOpen] = useState(false);
 
@@ -57,12 +58,16 @@ export default function Header({
               <Menu size={20} />
             </button>
 
-            <div className="header-brand">
+            <div className="header-brand" onClick={() => setActiveTab('store-profile')} style={{ cursor: 'pointer' }}>
               <div className="brand-icon">
-                <Citrus size={20} color="#FFFFFF" />
+                {storeProfile?.storeLogo ? (
+                  <img src={storeProfile.storeLogo} alt="Logo" style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
+                ) : (
+                  <Citrus size={20} color="#FFFFFF" />
+                )}
               </div>
               <div className="brand-text">
-                <h1>JuiceLedger</h1>
+                <h1>{storeProfile?.storeName || 'JuiceLedger'}</h1>
               </div>
             </div>
           </div>
@@ -82,6 +87,13 @@ export default function Header({
             >
               <BookOpen size={15} />
               <span>Sổ Thu Chi</span>
+            </button>
+            <button
+              className={`nav-btn ${activeTab === 'store-profile' ? 'active' : ''}`}
+              onClick={() => setActiveTab('store-profile')}
+            >
+              <Store size={15} />
+              <span>Hồ Sơ Quán</span>
             </button>
           </nav>
 
@@ -157,11 +169,15 @@ export default function Header({
 
         {/* Drawer Header */}
         <div className="drawer-header">
-          <div className="drawer-brand">
+          <div className="drawer-brand" onClick={() => navigate('store-profile')} style={{ cursor: 'pointer' }}>
             <div className="brand-icon">
-              <Citrus size={20} color="#FFFFFF" />
+              {storeProfile?.storeLogo ? (
+                <img src={storeProfile.storeLogo} alt="Logo" style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
+              ) : (
+                <Citrus size={20} color="#FFFFFF" />
+              )}
             </div>
-            <span className="drawer-brand-name">JuiceLedger</span>
+            <span className="drawer-brand-name">{storeProfile?.storeName || 'JuiceLedger'}</span>
           </div>
           <button
             className="icon-btn drawer-close-btn"
@@ -214,6 +230,16 @@ export default function Header({
               <BookOpen size={18} />
             </div>
             <span>Sổ Thu Chi</span>
+          </button>
+
+          <button
+            className={`drawer-nav-item ${activeTab === 'store-profile' ? 'active' : ''}`}
+            onClick={() => navigate('store-profile')}
+          >
+            <div className="drawer-nav-icon">
+              <Store size={18} />
+            </div>
+            <span>Hồ Sơ Cửa Hàng</span>
           </button>
         </nav>
 

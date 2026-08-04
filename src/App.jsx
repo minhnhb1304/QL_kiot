@@ -2,12 +2,14 @@ import React, { useState, useEffect } from 'react';
 import Header from './components/Header';
 import Dashboard from './pages/Dashboard';
 import LedgerPage from './pages/LedgerPage';
+import StoreProfilePage from './pages/StoreProfilePage';
 import LoginPage from './pages/LoginPage';
 import TransactionFormModal from './components/TransactionFormModal';
 import SmsAutomationModal from './components/SmsAutomationModal';
 import ProfileEditModal from './components/ProfileEditModal';
 import { storageService } from './services/storageService';
 import { authService } from './services/authService';
+import { storeProfileService } from './services/storeProfileService';
 import ConfirmDialog from './components/ConfirmDialog';
 import Toast from './components/Toast';
 import ErrorBoundary from './components/ErrorBoundary';
@@ -22,6 +24,7 @@ export default function App() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSmsModalOpen, setIsSmsModalOpen] = useState(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+  const [storeProfile, setStoreProfile] = useState(null);
 
   const [toast, setToast] = useState(null);
   const [confirmDialog, setConfirmDialog] = useState(null);
@@ -42,6 +45,28 @@ export default function App() {
       setSession(existingSession);
     }
   }, []);
+
+  // Load store profile when session is available
+  useEffect(() => {
+    if (session?.user) {
+      const ownerUsername = session.user.role === 'OWNER'
+        ? session.user.username
+        : 'admin';
+      storeProfileService.getOrCreateProfile(ownerUsername)
+        .then(setStoreProfile)
+        .catch(err => console.error('Error loading store profile:', err));
+    }
+  }, [session]);
+
+  const handleUpdateStoreProfile = async (updates) => {
+    if (!session?.user) return;
+    const ownerUsername = session.user.role === 'OWNER'
+      ? session.user.username
+      : 'admin';
+    const updated = await storeProfileService.updateProfile(ownerUsername, updates);
+    setStoreProfile(updated);
+    showToast('Đã cập nhật hồ sơ cửa hàng', 'success');
+  };
 
   // Sync theme attribute to HTML tag
   useEffect(() => {
@@ -98,10 +123,10 @@ export default function App() {
 
       // Load Summary Stats specifically for Dashboard's date range
       const filter = getDateRangeFilter();
-      const s = await storageService.getStats(filter.startDate, filter.endDate);
-      setStats(s);
+      const summaryStats = await storageService.getSummaryStats(filter);
+      setStats(summaryStats);
     } catch (err) {
-      console.error('Error loading data:', err);
+      console.error('Lỗi load dữ liệu:', err);
     }
   };
 
@@ -112,27 +137,27 @@ export default function App() {
   }, [session, dateRange]);
 
   // Handle adding new transaction
-  const handleSaveTransaction = async (newTx) => {
-    await storageService.addTransaction(newTx);
+  const handleSaveTransaction = async (formData) => {
+    await storageService.addTransaction(formData);
     await loadData();
-    showToast('Đã thêm giao dịch', 'success');
+    showToast('Đã lưu giao dịch mới!', 'success');
   };
 
   // Handle parsing & processing SMS Banking text
-  const handleProcessSms = async (smsText, sender) => {
-    try {
-      const result = await storageService.parseAndProcessSms(smsText, sender);
-      await loadData();
-      showToast('Đã xử lý tin nhắn thành công', 'success');
-      return result;
-    } catch (err) {
-      showToast(err.message || 'Lỗi khi xử lý tin nhắn', 'error');
-      throw err;
+  const handleProcessSms = async (smsText) => {
+    const parsed = storageService.parseSmsMessage(smsText, categories);
+    if (!parsed) {
+      showToast('Không đọc được thông tin giao dịch từ SMS!', 'error');
+      return false;
     }
+    await storageService.addTransaction(parsed);
+    await loadData();
+    showToast(`Tự động ghi nhận ${parsed.type === 'IN' ? 'Thu' : 'Chi'}: ${parsed.amount.toLocaleString('vi-VN')}đ`, 'success');
+    return true;
   };
 
   // Handle deleting transaction
-  const handleDeleteTransaction = (id) => {
+  const handleDeleteTransaction = async (id) => {
     setConfirmDialog({
       title: 'Xóa giao dịch',
       message: 'Bạn có chắc chắn muốn xóa giao dịch này không?',
@@ -141,7 +166,7 @@ export default function App() {
         await storageService.deleteTransaction(id);
         await loadData();
         setConfirmDialog(null);
-        showToast('Đã xóa giao dịch', 'success');
+        showToast('Đã xóa giao dịch', 'info');
       },
       onCancel: () => setConfirmDialog(null)
     });
@@ -202,11 +227,12 @@ export default function App() {
         currentUser={session?.user}
         onLogout={handleLogout}
         onEditProfile={() => setIsProfileModalOpen(true)}
+        storeProfile={storeProfile}
       />
 
       {/* Main Container */}
       <main className="app-container">
-        {activeTab === 'dashboard' ? (
+        {activeTab === 'dashboard' && (
           <Dashboard
             stats={stats}
             dateRange={dateRange}
@@ -215,11 +241,20 @@ export default function App() {
             onOpenAddModal={() => setIsModalOpen(true)}
             transactions={transactions}
           />
-        ) : (
+        )}
+        {activeTab === 'ledger' && (
           <LedgerPage
             transactions={transactions}
             onDeleteTransaction={handleDeleteTransaction}
             onOpenAddModal={() => setIsModalOpen(true)}
+          />
+        )}
+        {activeTab === 'store-profile' && (
+          <StoreProfilePage
+            storeProfile={storeProfile}
+            currentUser={session?.user}
+            onUpdateProfile={handleUpdateStoreProfile}
+            totalTransactions={transactions.length}
           />
         )}
       </main>
