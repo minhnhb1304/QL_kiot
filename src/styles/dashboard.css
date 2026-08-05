@@ -1424,6 +1424,14 @@
 ───────────────────────────────────────────── */
 .sms-modal-content {
   max-width: 580px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.sms-modal-content .modal-form {
+  overflow-y: auto;
+  max-height: calc(90vh - 65px);
 }
 
 .webhook-copy-box {
