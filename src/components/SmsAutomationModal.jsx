@@ -59,6 +59,40 @@ export default function SmsAutomationModal({ isOpen, onClose, onSmsProcessed }) 
                 <span>{copied ? 'Đã chép' : 'Sao chép'}</span>
               </button>
             </div>
+            <p className="form-help-text" style={{ marginTop: '8px', fontSize: '0.85rem', color: '#64748b' }}>
+              Dùng URL này cài đặt vào ứng dụng tự động chuyển tiếp SMS (SMS Forwarder/Auto Forward SMS).
+            </p>
+            <div style={{ marginTop: '10px', display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+              <a 
+                href="https://apps.apple.com/us/app/sms-forwarder-forward-sms/id6693285061" 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className="btn-secondary"
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', textDecoration: 'none', fontSize: '0.85rem' }}
+              >
+                <span>📱 Tải ứng dụng trên App Store</span>
+              </a>
+              <a 
+                href="https://play.google.com/store/apps/details?id=com.bogdad.smsforwarder" 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className="btn-secondary"
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', textDecoration: 'none', fontSize: '0.85rem' }}
+              >
+                <span>🤖 Tải ứng dụng trên Google Play</span>
+              </a>
+            </div>
+
+            {/* Instruction Box */}
+            <div className="sms-notice-box">
+              <strong>📌 Lưu ý quan trọng khi cài đặt trên điện thoại:</strong>
+              <ul>
+                <li><strong>Cấp quyền tin nhắn:</strong> Cho phép app quyền <i>Read SMS / Notification Access</i>.</li>
+                <li><strong>Tắt Tối ưu hóa pin (Battery Optimization):</strong> Vào <i>Cài đặt điện thoại &gt; Ứng dụng &gt; SMS Forwarder &gt; Pin &gt; Chọn "Không hạn chế" (Unrestricted)</i> để app không bị hệ thống tắt khi chạy ngầm.</li>
+                <li><strong>Cấu hình Webhook:</strong> Chọn Phương thức HTTP là <code>POST</code>, định dạng JSON payload, và dán <b>URL Webhook</b> ở trên vào mục Target URL.</li>
+                <li><strong>Bộ lọc Sender (Khuyên dùng):</strong> Cài đặt lọc chỉ chuyển tiếp SMS có tên từ ngân hàng (ví dụ: <code>VCB</code>, <code>MBBANK</code>, <code>SACOMBANK</code>) để tránh gửi nhầm tin nhắn rác/riêng tư.</li>
+              </ul>
+            </div>
           </div>
 
           {/* Live Simulator Form */}

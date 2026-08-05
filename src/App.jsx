@@ -123,7 +123,7 @@ export default function App() {
 
       // Load Summary Stats specifically for Dashboard's date range
       const filter = getDateRangeFilter();
-      const summaryStats = await storageService.getSummaryStats(filter);
+      const summaryStats = await storageService.getStats(filter.startDate, filter.endDate);
       setStats(summaryStats);
     } catch (err) {
       console.error('Lỗi load dữ liệu:', err);
