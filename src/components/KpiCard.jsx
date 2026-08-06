@@ -1,9 +1,19 @@
 import React from 'react';
+import { createCurrencyFormatter } from '../utils/currency';
 
-export default function KpiCard({ title, amount, color, subtitle, badgeText, badgeType, formatAsCurrency = true }) {
-  const formattedAmount = formatAsCurrency 
-    ? new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount || 0)
-    : amount;
+export default function KpiCard({
+  title,
+  amount,
+  color,
+  subtitle,
+  badgeText,
+  badgeType,
+  formatAsCurrency = true,
+  currency = 'VND',
+  formatCurrency
+}) {
+  const formatter = formatCurrency || createCurrencyFormatter(currency);
+  const formattedAmount = formatAsCurrency ? formatter(amount || 0) : amount;
 
   return (
     <div className="card kpi-card">

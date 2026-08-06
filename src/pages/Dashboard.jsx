@@ -1,8 +1,9 @@
-import React from 'react';
-import { Banknote, Wallet } from 'lucide-react';
+import React, { useMemo } from 'react';
+import { Banknote, Wallet, Target } from 'lucide-react';
 import KpiCard from '../components/KpiCard';
 import CashflowChart from '../components/CashflowChart';
 import ExpensePieChart from '../components/ExpensePieChart';
+import { createCurrencyFormatter } from '../utils/currency';
 
 const RANGE_LABELS = {
   TODAY: 'Hôm nay',
@@ -11,12 +12,23 @@ const RANGE_LABELS = {
   ALL: 'Tất cả',
 };
 
-const formatVND = (val) =>
-  new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(val || 0);
+export default function Dashboard({
+  stats,
+  dateRange,
+  setDateRange,
+  theme,
+  onOpenAddModal,
+  transactions = [],
+  storeProfile,
+  formatCurrency
+}) {
+  const currencyFormatter = useMemo(
+    () => formatCurrency || createCurrencyFormatter(storeProfile?.currency || 'VND'),
+    [formatCurrency, storeProfile?.currency]
+  );
 
-export default function Dashboard({ stats, dateRange, setDateRange, theme, onOpenAddModal, transactions = [] }) {
   // Extract unique months from transactions array in "T7/2026", "T8/2026" format
-  const availableMonths = React.useMemo(() => {
+  const availableMonths = useMemo(() => {
     const monthMap = new Map();
     (transactions || []).forEach(t => {
       if (t.transaction_date) {
@@ -35,6 +47,15 @@ export default function Dashboard({ stats, dateRange, setDateRange, theme, onOpe
 
     return Array.from(monthMap.values()).sort((a, b) => b.key.localeCompare(a.key));
   }, [transactions]);
+
+  // Revenue goal progress for dashboard
+  const revenueGoalProgress = useMemo(() => {
+    if (!storeProfile?.monthlyRevenueGoal || storeProfile.monthlyRevenueGoal <= 0) return null;
+    const goal = storeProfile.monthlyRevenueGoal;
+    const current = stats?.totalIncome || 0;
+    const percent = Math.min((current / goal) * 100, 100);
+    return { goal, current, percent };
+  }, [storeProfile?.monthlyRevenueGoal, stats?.totalIncome]);
 
   if (!stats) return <div className="loading">Đang tải dữ liệu...</div>;
 
@@ -94,6 +115,7 @@ export default function Dashboard({ stats, dateRange, setDateRange, theme, onOpe
           color="var(--primary-500)"
           badgeText="Thu"
           badgeType="in"
+          formatCurrency={currencyFormatter}
         />
         <KpiCard
           title="CHI PHÍ"
@@ -101,6 +123,7 @@ export default function Dashboard({ stats, dateRange, setDateRange, theme, onOpe
           color="var(--expense-red-500)"
           badgeText="Chi"
           badgeType="out"
+          formatCurrency={currencyFormatter}
         />
         <KpiCard
           title="LÃI RÒNG"
@@ -109,6 +132,7 @@ export default function Dashboard({ stats, dateRange, setDateRange, theme, onOpe
           subtitle={`Tỷ suất: ${stats.profitMargin}%`}
           badgeText={stats.netProfit >= 0 ? 'Lãi' : 'Lỗ'}
           badgeType={stats.netProfit >= 0 ? 'in' : 'out'}
+          formatCurrency={currencyFormatter}
         />
         <KpiCard
           title="QUỸ NGÂN HÀNG"
@@ -116,13 +140,57 @@ export default function Dashboard({ stats, dateRange, setDateRange, theme, onOpe
           color="var(--bank-blue-500)"
           badgeText="Bank QR"
           badgeType="bank"
+          formatCurrency={currencyFormatter}
         />
       </div>
 
+      {/* Monthly Revenue Goal Progress (Phase 2 & Phase 3) */}
+      {revenueGoalProgress && (
+        <div className="card revenue-goal-card" style={{ padding: '1.25rem', marginTop: '1rem' }}>
+          <div className="rg-header" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '0.75rem' }}>
+            <Target size={16} className="text-emerald-500" />
+            <span>Mục Tiêu Doanh Thu Tháng</span>
+          </div>
+          <div className="rg-amounts" style={{ display: 'flex', alignItems: 'baseline', gap: '0.35rem', marginBottom: '0.75rem' }}>
+            <span className="rg-current" style={{ fontSize: '1.3rem', fontWeight: 800, color: 'var(--primary-500)' }}>
+              {currencyFormatter(revenueGoalProgress.current)}
+            </span>
+            <span className="rg-divider" style={{ color: 'var(--text-light)' }}>/</span>
+            <span className="rg-goal" style={{ fontSize: '0.95rem', color: 'var(--text-muted)' }}>
+              {currencyFormatter(revenueGoalProgress.goal)}
+            </span>
+          </div>
+          <div className="rg-bar-track" style={{ height: '10px', borderRadius: '9999px', backgroundColor: 'var(--bg-main)', overflow: 'hidden', marginBottom: '0.5rem' }}>
+            <div
+              className="rg-bar-fill"
+              style={{
+                width: `${revenueGoalProgress.percent}%`,
+                height: '100%',
+                borderRadius: '9999px',
+                background: 'linear-gradient(90deg, var(--primary-500), #34D399)',
+                transition: 'width 0.6s ease-in-out'
+              }}
+            />
+          </div>
+          <span className="rg-percent" style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--primary-600)' }}>
+            {revenueGoalProgress.percent.toFixed(1)}% Hoàn thành
+          </span>
+        </div>
+      )}
+
       {/* Charts */}
       <div className="grid-charts">
-        <CashflowChart dailyData={stats.dailyTrends || []} theme={theme} periodLabel={periodLabel} />
-        <ExpensePieChart categoriesData={stats.expenseCategories || []} theme={theme} />
+        <CashflowChart
+          dailyData={stats.dailyTrends || []}
+          theme={theme}
+          periodLabel={periodLabel}
+          formatCurrency={currencyFormatter}
+        />
+        <ExpensePieChart
+          categoriesData={stats.expenseCategories || []}
+          theme={theme}
+          formatCurrency={currencyFormatter}
+        />
       </div>
 
       {/* Fund Control Card */}
@@ -136,7 +204,7 @@ export default function Dashboard({ stats, dateRange, setDateRange, theme, onOpe
             <div className="fund-info">
               <span className="fund-label">Tiền Mặt Tại Quầy</span>
               <strong className="fund-amount text-orange">
-                {formatVND(stats.cashBalance)}
+                {currencyFormatter(stats.cashBalance)}
               </strong>
             </div>
           </div>
@@ -148,7 +216,7 @@ export default function Dashboard({ stats, dateRange, setDateRange, theme, onOpe
             <div className="fund-info">
               <span className="fund-label">Tài Khoản Ngân Hàng</span>
               <strong className="fund-amount text-blue">
-                {formatVND(stats.bankBalance)}
+                {currencyFormatter(stats.bankBalance)}
               </strong>
             </div>
           </div>

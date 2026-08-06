@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Header from './components/Header';
 import Dashboard from './pages/Dashboard';
 import LedgerPage from './pages/LedgerPage';
@@ -10,6 +10,7 @@ import ProfileEditModal from './components/ProfileEditModal';
 import { storageService } from './services/storageService';
 import { authService } from './services/authService';
 import { storeProfileService } from './services/storeProfileService';
+import { createCurrencyFormatter } from './utils/currency';
 import ConfirmDialog from './components/ConfirmDialog';
 import Toast from './components/Toast';
 import ErrorBoundary from './components/ErrorBoundary';
@@ -37,6 +38,12 @@ export default function App() {
 
   // Date Range filter for Dashboard ('TODAY', 'WEEK', 'MONTH', 'ALL')
   const [dateRange, setDateRange] = useState({ rangeType: 'MONTH' });
+
+  // Currency Formatter based on storeProfile.currency
+  const formatCurrency = useMemo(
+    () => createCurrencyFormatter(storeProfile?.currency || 'VND'),
+    [storeProfile?.currency]
+  );
 
   // Auto-login on mount if saved session exists
   useEffect(() => {
@@ -78,7 +85,7 @@ export default function App() {
     setTheme(prev => (prev === 'light' ? 'dark' : 'light'));
   };
 
-  // Calculate start & end date strings based on rangeType
+  // Phase 3: Calculate start & end date strings based on rangeType and financialMonthStartDay
   const getDateRangeFilter = () => {
     const today = new Date();
     const todayStr = today.toISOString().split('T')[0];
@@ -94,8 +101,19 @@ export default function App() {
     }
 
     if (dateRange.rangeType === 'MONTH') {
-      const firstDay = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split('T')[0];
-      return { startDate: firstDay, endDate: todayStr };
+      const startDay = storeProfile?.financialMonthStartDay || 1;
+      let startDate;
+      if (today.getDate() >= startDay) {
+        // Start from startDay of current calendar month
+        startDate = new Date(today.getFullYear(), today.getMonth(), startDay);
+      } else {
+        // Start from startDay of previous calendar month
+        startDate = new Date(today.getFullYear(), today.getMonth() - 1, startDay);
+      }
+      return {
+        startDate: startDate.toISOString().split('T')[0],
+        endDate: todayStr
+      };
     }
 
     if (dateRange.rangeType && dateRange.rangeType.startsWith('MONTH_')) {
@@ -103,9 +121,14 @@ export default function App() {
       const [yearStr, monthStr] = yearMonth.split('-');
       const year = parseInt(yearStr, 10);
       const month = parseInt(monthStr, 10);
-      const firstDay = new Date(year, month - 1, 1).toISOString().split('T')[0];
-      const lastDay = new Date(year, month, 0).toISOString().split('T')[0];
-      return { startDate: firstDay, endDate: lastDay };
+      const startDay = storeProfile?.financialMonthStartDay || 1;
+
+      const startDate = new Date(year, month - 1, startDay);
+      const endDate = new Date(year, month, startDay - 1);
+      return {
+        startDate: startDate.toISOString().split('T')[0],
+        endDate: endDate.toISOString().split('T')[0]
+      };
     }
 
     return {}; // ALL
@@ -134,7 +157,7 @@ export default function App() {
     if (session) {
       loadData();
     }
-  }, [session, dateRange]);
+  }, [session, dateRange, storeProfile?.financialMonthStartDay]);
 
   // Handle adding new transaction
   const handleSaveTransaction = async (formData) => {
@@ -144,16 +167,16 @@ export default function App() {
   };
 
   // Handle parsing & processing SMS Banking text
-  const handleProcessSms = async (smsText) => {
-    const parsed = storageService.parseSmsMessage(smsText, categories);
-    if (!parsed) {
-      showToast('Không đọc được thông tin giao dịch từ SMS!', 'error');
-      return false;
+  const handleProcessSms = async (smsText, sender = 'SACOMBANK') => {
+    try {
+      const result = await storageService.parseAndProcessSms(smsText, sender);
+      await loadData();
+      showToast(`Tự động ghi nhận Thu: ${formatCurrency(result.parsedAmount)}`, 'success');
+      return result;
+    } catch (err) {
+      showToast(err.message || 'Lỗi bóc tách SMS!', 'error');
+      throw err;
     }
-    await storageService.addTransaction(parsed);
-    await loadData();
-    showToast(`Tự động ghi nhận ${parsed.type === 'IN' ? 'Thu' : 'Chi'}: ${parsed.amount.toLocaleString('vi-VN')}đ`, 'success');
-    return true;
   };
 
   // Handle deleting transaction
@@ -240,6 +263,8 @@ export default function App() {
             theme={theme}
             onOpenAddModal={() => setIsModalOpen(true)}
             transactions={transactions}
+            storeProfile={storeProfile}
+            formatCurrency={formatCurrency}
           />
         )}
         {activeTab === 'ledger' && (
@@ -247,6 +272,8 @@ export default function App() {
             transactions={transactions}
             onDeleteTransaction={handleDeleteTransaction}
             onOpenAddModal={() => setIsModalOpen(true)}
+            storeProfile={storeProfile}
+            formatCurrency={formatCurrency}
           />
         )}
         {activeTab === 'store-profile' && (
@@ -255,6 +282,7 @@ export default function App() {
             currentUser={session?.user}
             onUpdateProfile={handleUpdateStoreProfile}
             totalTransactions={transactions.length}
+            currentMonthRevenue={stats?.totalIncome || 0}
           />
         )}
       </main>

@@ -1,11 +1,14 @@
 import React, { useState } from 'react';
 import { Search, Trash2, FileText } from 'lucide-react';
+import { createCurrencyFormatter } from '../utils/currency';
 
-export default function TransactionList({ transactions, onDeleteTransaction, onOpenAddModal }) {
+export default function TransactionList({ transactions, onDeleteTransaction, onOpenAddModal, currency = 'VND', formatCurrency }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [viewMode, setViewMode] = useState('ALL'); // 'ALL', 'SPLIT', 'IN', 'OUT'
   const [sourceFilter, setSourceFilter] = useState('ALL');
   const [dateFilter, setDateFilter] = useState('ALL'); // 'ALL', 'MONTH', 'WEEK', 'TODAY', 'MONTH_YYYY-MM'
+
+  const formatter = formatCurrency || createCurrencyFormatter(currency);
 
   // Extract unique months from transactions array in "T7/2026", "T8/2026" format
   const availableMonths = React.useMemo(() => {
@@ -67,7 +70,7 @@ export default function TransactionList({ transactions, onDeleteTransaction, onO
   const totalOutAmount = outList.reduce((acc, cur) => acc + Number(cur.amount), 0);
 
   const formatVND = (val) => {
-    return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(val);
+    return formatter(val);
   };
 
   return (

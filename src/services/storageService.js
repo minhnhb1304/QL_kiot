@@ -112,6 +112,29 @@ class StorageService {
     return { ...newTx, id, parsedAmount: amount };
   }
 
+  // Parse SMS Banking text into transaction object
+  parseSmsMessage(smsText, categories = []) {
+    const amountMatch = smsText.match(/\+([0-9.,]+)\s*(VND|đ|d)/i);
+    if (!amountMatch) return null;
+
+    const rawAmountStr = amountMatch[1].replace(/[,.]/g, '');
+    const amount = Number(rawAmountStr);
+    if (!amount || amount <= 0) return null;
+
+    const dateStr = new Date().toISOString().split('T')[0];
+
+    return {
+      type: 'IN',
+      category_id: categories[0]?.id || 1,
+      category_name: categories[0]?.name || 'Doanh thu nước ép',
+      amount: amount,
+      payment_source: 'BANK',
+      note: `[SMS Tự Động] ${smsText.substring(0, 100)}`,
+      transaction_date: dateStr,
+      created_at: new Date().toISOString()
+    };
+  }
+
   // Delete transaction
   async deleteTransaction(id) {
     await this.init();
@@ -202,6 +225,48 @@ class StorageService {
   // Clear all data (Reset tool for user)
   async resetData() {
     await db.transactions.clear();
+  }
+
+  // Phase 3: Get total transaction count all-time
+  async getTotalTransactionCount() {
+    await this.init();
+    return await db.transactions.count();
+  }
+
+  // Phase 3: Get peak revenue month
+  async getPeakRevenueMonth() {
+    await this.init();
+    const allTx = await db.transactions
+      .where('type').equals('IN')
+      .toArray();
+
+    if (allTx.length === 0) return null;
+
+    const monthMap = {};
+    allTx.forEach(t => {
+      if (t.transaction_date) {
+        const monthKey = t.transaction_date.substring(0, 7); // "YYYY-MM"
+        monthMap[monthKey] = (monthMap[monthKey] || 0) + Number(t.amount);
+      }
+    });
+
+    let peakMonth = null;
+    let peakAmount = 0;
+    for (const [month, amount] of Object.entries(monthMap)) {
+      if (amount > peakAmount) {
+        peakAmount = amount;
+        peakMonth = month;
+      }
+    }
+
+    if (!peakMonth) return null;
+
+    const [y, m] = peakMonth.split('-');
+    return {
+      monthKey: peakMonth,
+      label: `T${parseInt(m, 10)}/${y}`,
+      amount: peakAmount
+    };
   }
 }
 

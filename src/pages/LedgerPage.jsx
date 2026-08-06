@@ -1,13 +1,15 @@
 import React from 'react';
 import TransactionList from '../components/TransactionList';
 
-export default function LedgerPage({ transactions, onDeleteTransaction, onOpenAddModal }) {
+export default function LedgerPage({ transactions, onDeleteTransaction, onOpenAddModal, storeProfile, formatCurrency }) {
   return (
     <div className="ledger-page">
       <TransactionList
         transactions={transactions}
         onDeleteTransaction={onDeleteTransaction}
         onOpenAddModal={onOpenAddModal}
+        currency={storeProfile?.currency || 'VND'}
+        formatCurrency={formatCurrency}
       />
     </div>
   );

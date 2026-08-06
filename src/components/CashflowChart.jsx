@@ -9,13 +9,16 @@ import {
   Legend
 } from 'chart.js';
 import { Bar } from 'react-chartjs-2';
+import { createCurrencyFormatter } from '../utils/currency';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
-export default function CashflowChart({ dailyData, theme, periodLabel }) {
+export default function CashflowChart({ dailyData, theme, periodLabel, currency = 'VND', formatCurrency }) {
   const isDark = theme === 'dark';
   const textColor = isDark ? '#94A3B8' : '#64748B';
   const gridColor = isDark ? '#263044' : '#E2E8F0';
+
+  const formatter = formatCurrency || createCurrencyFormatter(currency);
 
   const labels = dailyData.map(item => {
     const parts = item.date.split('-');
@@ -63,7 +66,7 @@ export default function CashflowChart({ dailyData, theme, periodLabel }) {
       tooltip: {
         callbacks: {
           label: (ctx) => {
-            const val = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(ctx.parsed.y);
+            const val = formatter(ctx.parsed.y);
             return `${ctx.dataset.label}: ${val}`;
           }
         }
