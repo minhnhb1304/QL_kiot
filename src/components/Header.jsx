@@ -12,7 +12,6 @@ export default function Header({
   onOpenSmsModal,
   theme,
   toggleTheme,
-  onResetData,
   currentUser,
   onLogout,
   onEditProfile,

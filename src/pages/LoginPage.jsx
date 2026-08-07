@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import {
   Citrus, Lock, User, AtSign, Phone, Mail,
-  Eye, EyeOff, UserPlus, Crown, UserCheck, ShieldCheck, CheckCircle2
+  Eye, EyeOff, UserPlus, Crown, UserCheck, ShieldCheck
 } from 'lucide-react';
 import { authService } from '../services/authService';
 
@@ -102,6 +102,40 @@ export default function LoginPage({ onLoginSuccess }) {
             <span>Đăng Ký</span>
           </button>
         </div>
+
+        {/* Alert Messages */}
+        {errorMsg && (
+          <div className="login-error-alert" style={{
+            backgroundColor: '#fef2f2',
+            color: '#ef4444',
+            border: '1px solid #fca5a5',
+            padding: '0.65rem 0.85rem',
+            borderRadius: '8px',
+            fontSize: '0.85rem',
+            margin: '0.5rem 0 1rem 0',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem'
+          }}>
+            <span>⚠️ {errorMsg}</span>
+          </div>
+        )}
+        {successMsg && (
+          <div className="login-success-alert" style={{
+            backgroundColor: '#ecfdf5',
+            color: '#10b981',
+            border: '1px solid #6ee7b7',
+            padding: '0.65rem 0.85rem',
+            borderRadius: '8px',
+            fontSize: '0.85rem',
+            margin: '0.5rem 0 1rem 0',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem'
+          }}>
+            <span>✅ {successMsg}</span>
+          </div>
+        )}
 
         {/* MODE 2: Password Login */}
         {mode === 'password' && (

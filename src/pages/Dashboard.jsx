@@ -17,7 +17,6 @@ export default function Dashboard({
   dateRange,
   setDateRange,
   theme,
-  onOpenAddModal,
   transactions = [],
   storeProfile,
   formatCurrency

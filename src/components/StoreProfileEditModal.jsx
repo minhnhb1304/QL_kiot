@@ -2,8 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { Store, X, Save, Upload, Camera, Trash2, DollarSign, Calendar, Target } from 'lucide-react';
 
 export default function StoreProfileEditModal({ storeProfile, isOpen, onClose, onSave }) {
-  if (!isOpen) return null;
-
   const [formData, setFormData] = useState({
     storeName: storeProfile?.storeName || '',
     storeSlogan: storeProfile?.storeSlogan || '',
@@ -20,18 +18,23 @@ export default function StoreProfileEditModal({ storeProfile, isOpen, onClose, o
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    setFormData({
-      storeName: storeProfile?.storeName || '',
-      storeSlogan: storeProfile?.storeSlogan || '',
-      storeAddress: storeProfile?.storeAddress || '',
-      storePhone: storeProfile?.storePhone || '',
-      businessStartDate: storeProfile?.businessStartDate || '',
-      currency: storeProfile?.currency || 'VND',
-      monthlyRevenueGoal: storeProfile?.monthlyRevenueGoal || 0,
-      financialMonthStartDay: storeProfile?.financialMonthStartDay || 1,
-    });
-    setLogoPreview(storeProfile?.storeLogo || null);
-  }, [storeProfile]);
+    if (isOpen) {
+      setFormData({
+        storeName: storeProfile?.storeName || '',
+        storeSlogan: storeProfile?.storeSlogan || '',
+        storeAddress: storeProfile?.storeAddress || '',
+        storePhone: storeProfile?.storePhone || '',
+        businessStartDate: storeProfile?.businessStartDate || '',
+        currency: storeProfile?.currency || 'VND',
+        monthlyRevenueGoal: storeProfile?.monthlyRevenueGoal || 0,
+        financialMonthStartDay: storeProfile?.financialMonthStartDay || 1,
+      });
+      setLogoPreview(storeProfile?.storeLogo || null);
+      setError('');
+    }
+  }, [isOpen, storeProfile]);
+
+  if (!isOpen) return null;
 
   const handleChange = (e) => {
     const { name, value } = e.target;

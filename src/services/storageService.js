@@ -147,6 +147,26 @@ class StorageService {
     await this.init();
     const transactions = await this.getTransactions({ startDate, endDate });
 
+    // Fetch all transactions up to endDate (or all-time) for accurate account fund balances
+    const allTransactions = await this.getTransactions({});
+    let accumulatedCashIn = 0;
+    let accumulatedCashOut = 0;
+    let accumulatedBankIn = 0;
+    let accumulatedBankOut = 0;
+
+    allTransactions.forEach(t => {
+      // Only include transactions up to selected endDate if endDate exists
+      if (endDate && t.transaction_date > endDate) return;
+      const amt = Number(t.amount) || 0;
+      if (t.type === 'IN') {
+        if (t.payment_source === 'CASH') accumulatedCashIn += amt;
+        if (t.payment_source === 'BANK') accumulatedBankIn += amt;
+      } else {
+        if (t.payment_source === 'CASH') accumulatedCashOut += amt;
+        if (t.payment_source === 'BANK') accumulatedBankOut += amt;
+      }
+    });
+
     let totalIncome = 0;
     let totalExpense = 0;
     let cashIncome = 0;
@@ -176,8 +196,8 @@ class StorageService {
 
     const netProfit = totalIncome - totalExpense;
     const profitMargin = totalIncome > 0 ? ((netProfit / totalIncome) * 100).toFixed(1) : 0;
-    const cashBalance = cashIncome - cashExpense;
-    const bankBalance = bankIncome - bankExpense;
+    const cashBalance = accumulatedCashIn - accumulatedCashOut;
+    const bankBalance = accumulatedBankIn - accumulatedBankOut;
 
     const expenseCategories = Object.keys(categoryMap).map(catName => ({
       name: catName,

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { Store, Edit3, MapPin, Phone, Calendar, Award, Receipt, Citrus, StickyNote, Target, Crown, Flame } from 'lucide-react';
+import { Edit3, MapPin, Phone, Calendar, Award, Receipt, Citrus, StickyNote, Target, Crown, Flame } from 'lucide-react';
 import StoreProfileEditModal from '../components/StoreProfileEditModal';
 import { storeProfileService } from '../services/storeProfileService';
 import { storageService } from '../services/storageService';

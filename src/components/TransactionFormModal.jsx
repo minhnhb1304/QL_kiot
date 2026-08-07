@@ -9,13 +9,20 @@ export default function TransactionFormModal({ isOpen, onClose, onSave, categori
   const [note, setNote] = useState('');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
 
-  const filteredCategories = categories.filter(c => c.type === type);
+  const safeCategories = categories || [];
+  const filteredCategories = safeCategories.filter(c => c.type === type);
 
   useEffect(() => {
-    if (filteredCategories.length > 0 && !categoryId) {
-      setCategoryId(filteredCategories[0].id);
+    if (isOpen) {
+      setAmount('');
+      setNote('');
+      setDate(new Date().toISOString().split('T')[0]);
+      const currentFiltered = (categories || []).filter(c => c.type === type);
+      if (currentFiltered.length > 0) {
+        setCategoryId(currentFiltered[0].id);
+      }
     }
-  }, [type, categories]);
+  }, [isOpen, type, categories]);
 
   if (!isOpen) return null;
 

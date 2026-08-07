@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import Header from './components/Header';
 import Dashboard from './pages/Dashboard';
 import LedgerPage from './pages/LedgerPage';
@@ -85,57 +85,8 @@ export default function App() {
     setTheme(prev => (prev === 'light' ? 'dark' : 'light'));
   };
 
-  // Phase 3: Calculate start & end date strings based on rangeType and financialMonthStartDay
-  const getDateRangeFilter = () => {
-    const today = new Date();
-    const todayStr = today.toISOString().split('T')[0];
-
-    if (dateRange.rangeType === 'TODAY') {
-      return { startDate: todayStr, endDate: todayStr };
-    }
-
-    if (dateRange.rangeType === 'WEEK') {
-      const d = new Date(today);
-      d.setDate(d.getDate() - 7);
-      return { startDate: d.toISOString().split('T')[0], endDate: todayStr };
-    }
-
-    if (dateRange.rangeType === 'MONTH') {
-      const startDay = storeProfile?.financialMonthStartDay || 1;
-      let startDate;
-      if (today.getDate() >= startDay) {
-        // Start from startDay of current calendar month
-        startDate = new Date(today.getFullYear(), today.getMonth(), startDay);
-      } else {
-        // Start from startDay of previous calendar month
-        startDate = new Date(today.getFullYear(), today.getMonth() - 1, startDay);
-      }
-      return {
-        startDate: startDate.toISOString().split('T')[0],
-        endDate: todayStr
-      };
-    }
-
-    if (dateRange.rangeType && dateRange.rangeType.startsWith('MONTH_')) {
-      const yearMonth = dateRange.rangeType.replace('MONTH_', '');
-      const [yearStr, monthStr] = yearMonth.split('-');
-      const year = parseInt(yearStr, 10);
-      const month = parseInt(monthStr, 10);
-      const startDay = storeProfile?.financialMonthStartDay || 1;
-
-      const startDate = new Date(year, month - 1, startDay);
-      const endDate = new Date(year, month, startDay - 1);
-      return {
-        startDate: startDate.toISOString().split('T')[0],
-        endDate: endDate.toISOString().split('T')[0]
-      };
-    }
-
-    return {}; // ALL
-  };
-
   // Load Categories, Transactions & Stats
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       const cats = await storageService.getCategories();
       setCategories(cats);
@@ -144,20 +95,57 @@ export default function App() {
       const txs = await storageService.getTransactions({});
       setTransactions(txs);
 
+      // Calculate start & end date strings based on rangeType and financialMonthStartDay
+      const today = new Date();
+      const todayStr = today.toISOString().split('T')[0];
+      let filter = {};
+
+      if (dateRange.rangeType === 'TODAY') {
+        filter = { startDate: todayStr, endDate: todayStr };
+      } else if (dateRange.rangeType === 'WEEK') {
+        const d = new Date(today);
+        d.setDate(d.getDate() - 7);
+        filter = { startDate: d.toISOString().split('T')[0], endDate: todayStr };
+      } else if (dateRange.rangeType === 'MONTH') {
+        const startDay = storeProfile?.financialMonthStartDay || 1;
+        let startDate;
+        if (today.getDate() >= startDay) {
+          startDate = new Date(today.getFullYear(), today.getMonth(), startDay);
+        } else {
+          startDate = new Date(today.getFullYear(), today.getMonth() - 1, startDay);
+        }
+        filter = {
+          startDate: startDate.toISOString().split('T')[0],
+          endDate: todayStr
+        };
+      } else if (dateRange.rangeType && dateRange.rangeType.startsWith('MONTH_')) {
+        const yearMonth = dateRange.rangeType.replace('MONTH_', '');
+        const [yearStr, monthStr] = yearMonth.split('-');
+        const year = parseInt(yearStr, 10);
+        const month = parseInt(monthStr, 10);
+        const startDay = storeProfile?.financialMonthStartDay || 1;
+
+        const startDate = new Date(year, month - 1, startDay);
+        const endDate = new Date(year, month, startDay - 1);
+        filter = {
+          startDate: startDate.toISOString().split('T')[0],
+          endDate: endDate.toISOString().split('T')[0]
+        };
+      }
+
       // Load Summary Stats specifically for Dashboard's date range
-      const filter = getDateRangeFilter();
       const summaryStats = await storageService.getStats(filter.startDate, filter.endDate);
       setStats(summaryStats);
     } catch (err) {
       console.error('Lỗi load dữ liệu:', err);
     }
-  };
+  }, [dateRange, storeProfile?.financialMonthStartDay]);
 
   useEffect(() => {
     if (session) {
       loadData();
     }
-  }, [session, dateRange, storeProfile?.financialMonthStartDay]);
+  }, [session, loadData]);
 
   // Handle adding new transaction
   const handleSaveTransaction = async (formData) => {

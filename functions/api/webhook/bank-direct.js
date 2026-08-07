@@ -6,7 +6,7 @@ export async function onRequestPost(context) {
 
   try {
     const rawBody = await request.text();
-    const signature = request.headers.get('x-bank-signature') || request.headers.get('x-signature');
+    const _signature = request.headers.get('x-bank-signature') || request.headers.get('x-signature');
 
     // 1. Giải mã Payload từ Ngân Hàng
     const payload = JSON.parse(rawBody);
