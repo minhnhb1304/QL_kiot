@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { Search, Trash2, FileText } from 'lucide-react';
+import { Search, Trash2, FileText, FileSpreadsheet } from 'lucide-react';
 import { createCurrencyFormatter } from '../utils/currency';
+import { exportTransactionsToExcel } from '../utils/excelExport';
 
-export default function TransactionList({ transactions, onDeleteTransaction, onOpenAddModal, currency = 'VND', formatCurrency }) {
+export default function TransactionList({ transactions, onDeleteTransaction, onOpenAddModal, currency = 'VND', formatCurrency, storeProfile }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [viewMode, setViewMode] = useState('ALL'); // 'ALL', 'SPLIT', 'IN', 'OUT'
   const [sourceFilter, setSourceFilter] = useState('ALL');
@@ -73,6 +74,31 @@ export default function TransactionList({ transactions, onDeleteTransaction, onO
     return formatter(val);
   };
 
+  const handleExportExcel = () => {
+    let dateLabel = 'Tất cả thời gian';
+    if (dateFilter === 'TODAY') dateLabel = 'Hôm nay';
+    else if (dateFilter === 'WEEK') dateLabel = '7 ngày qua';
+    else if (dateFilter === 'MONTH') dateLabel = 'Tháng này';
+    else if (dateFilter.startsWith('MONTH_')) {
+      const ym = dateFilter.replace('MONTH_', '');
+      const [y, m] = ym.split('-');
+      dateLabel = `Tháng ${parseInt(m, 10)}/${y}`;
+    }
+
+    let modeLabel = 'Tất cả loại';
+    if (viewMode === 'IN') modeLabel = 'Chỉ Thu';
+    else if (viewMode === 'OUT') modeLabel = 'Chỉ Chi';
+    else if (viewMode === 'SPLIT') modeLabel = 'Giao diện chia Thu/Chi';
+
+    let sourceLabel = 'Tất cả nguồn';
+    if (sourceFilter === 'BANK') sourceLabel = 'Ngân hàng';
+    else if (sourceFilter === 'CASH') sourceLabel = 'Tiền mặt';
+
+    const filterLabel = `${dateLabel} | ${modeLabel} | ${sourceLabel}${searchTerm ? ` | Từ khóa: "${searchTerm}"` : ''}`;
+
+    exportTransactionsToExcel(filtered, storeProfile, { filterLabel });
+  };
+
   return (
     <div className="card transaction-list-card">
       <div className="list-header">
@@ -80,9 +106,19 @@ export default function TransactionList({ transactions, onDeleteTransaction, onO
           <h3>Sổ Thu Chi ({filtered.length})</h3>
         </div>
 
-        <button className="btn-primary btn-sm" onClick={onOpenAddModal}>
-          + Thêm Mới
-        </button>
+        <div className="header-button-group">
+          <button
+            className="btn-secondary btn-excel-export"
+            onClick={handleExportExcel}
+            title="Xuất danh sách giao dịch ra file Excel (.xlsx)"
+          >
+            <FileSpreadsheet size={16} color="#10B981" />
+            <span>Xuất Excel</span>
+          </button>
+          <button className="btn-primary btn-sm" onClick={onOpenAddModal}>
+            + Thêm Mới
+          </button>
+        </div>
       </div>
 
       {/* Filter Bar */}

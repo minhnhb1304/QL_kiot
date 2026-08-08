@@ -853,6 +853,42 @@
   border-radius: var(--radius-md);
 }
 
+.header-button-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.btn-excel-export {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.4rem 0.85rem;
+  font-size: 0.825rem;
+  font-weight: 600;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--border-color);
+  background-color: var(--bg-surface);
+  color: var(--text-main);
+  transition: all var(--transition-fast);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.btn-excel-export:hover {
+  background-color: #ECFDF5;
+  border-color: #A7F3D0;
+  color: #059669;
+  box-shadow: var(--shadow-sm);
+}
+
+[data-theme="dark"] .btn-excel-export:hover {
+  background-color: rgba(16, 185, 129, 0.15);
+  border-color: rgba(16, 185, 129, 0.35);
+  color: #34D399;
+}
+
 /* Filter Bar */
 .filter-bar {
   padding: 0.85rem 1.25rem;

@@ -1,9 +1,10 @@
 import React, { useMemo } from 'react';
-import { Banknote, Wallet, Target } from 'lucide-react';
+import { Banknote, Wallet, Target, FileSpreadsheet } from 'lucide-react';
 import KpiCard from '../components/KpiCard';
 import CashflowChart from '../components/CashflowChart';
 import ExpensePieChart from '../components/ExpensePieChart';
 import { createCurrencyFormatter } from '../utils/currency';
+import { exportDashboardStatsToExcel } from '../utils/excelExport';
 
 const RANGE_LABELS = {
   TODAY: 'Hôm nay',
@@ -65,6 +66,10 @@ export default function Dashboard({
     periodLabel = `Tháng T${parseInt(monthStr, 10)}/${yearStr}`;
   }
 
+  const handleExportDashboardExcel = () => {
+    exportDashboardStatsToExcel(stats, periodLabel || 'Tất cả', storeProfile);
+  };
+
   return (
     <div className="dashboard-page">
       {/* Time Filter Bar */}
@@ -103,6 +108,15 @@ export default function Dashboard({
               ))}
             </select>
           )}
+
+          <button
+            className="btn-secondary btn-excel-export"
+            onClick={handleExportDashboardExcel}
+            title="Xuất báo cáo thống kê chi tiết ra Excel (.xlsx)"
+          >
+            <FileSpreadsheet size={16} color="#10B981" />
+            <span>Xuất Báo Cáo Excel</span>
+          </button>
         </div>
       </div>
 
