@@ -112,6 +112,8 @@ export default function TransactionFormModal({ isOpen, onClose, onSave, categori
 
             {/* Quick Amount Chips */}
             <div className="quick-chips">
+              <button type="button" onClick={() => addQuickAmount(25000)}>+25k</button>
+              <button type="button" onClick={() => addQuickAmount(30000)}>+30k</button>
               <button type="button" onClick={() => addQuickAmount(50000)}>+50k</button>
               <button type="button" onClick={() => addQuickAmount(100000)}>+100k</button>
               <button type="button" onClick={() => addQuickAmount(200000)}>+200k</button>
