@@ -86,24 +86,30 @@ html {
   }
 
   .header-actions {
-    gap: 0.3rem;
+    gap: 0.35rem;
   }
 
-  /* Quick add button: compact */
+  /* Quick add button: prominent on mobile */
   .btn-quick-add {
-    padding: 0.45rem 0.65rem;
-    font-size: 0.8rem;
+    padding: 0.45rem 0.8rem;
+    font-size: 0.82rem;
+    font-weight: 700;
   }
 
-  /* Hide "Ghi Thu/Chi" text below 480px, show from 480px–1023px */
-  .quick-add-text {
+  /* Compact secondary buttons */
+  .btn-cash-tally {
+    padding: 0.4rem 0.55rem;
+    font-size: 0.75rem;
+  }
+
+  .btn-cash-text {
     display: none;
   }
 
-  /* SMS button: icon only on tablet/mobile */
+  /* SMS button: compact */
   .btn-sms-action {
-    padding: 0.45rem 0.55rem;
-    min-width: 36px;
+    padding: 0.4rem 0.55rem;
+    font-size: 0.75rem;
   }
 
   /* icon-btn in HEADER only — scoped to avoid affecting delete buttons */
@@ -113,9 +119,13 @@ html {
   }
 }
 
-/* Show quick-add text from 480px upward (still in tablet range) */
+/* Show button text labels from 480px upward */
 @media (min-width: 480px) and (max-width: 1023px) {
   .quick-add-text {
+    display: inline;
+  }
+
+  .btn-cash-text {
     display: inline;
   }
 }

@@ -144,7 +144,7 @@ export default function DailyCashModal({ isOpen, onClose, onSaved, formatCurrenc
         <div className="modal-header">
           <div className="modal-header-title">
             <Calculator className="text-emerald-500" size={22} />
-            <h2>Nhập Tiền Mặt Đầu/Cuối Ngày (Chốt Ca)</h2>
+            <h2>Nhập Tiền Mặt Đầu/Cuối Ngày (Chốt Tiền Mặt)</h2>
           </div>
           <button className="icon-btn" onClick={onClose} aria-label="Đóng"><X size={20} /></button>
         </div>
@@ -163,7 +163,7 @@ export default function DailyCashModal({ isOpen, onClose, onSaved, formatCurrenc
             onClick={() => setActiveTab('history')}
           >
             <History size={16} />
-            <span>Lịch Sử Chốt Ca ({historyList.length})</span>
+            <span>Lịch Sử Chốt Tiền Mặt ({historyList.length})</span>
           </button>
         </div>
 
@@ -307,11 +307,11 @@ export default function DailyCashModal({ isOpen, onClose, onSaved, formatCurrenc
 
             {/* Note Input */}
             <div className="form-group">
-              <label className="form-label">Ghi Chú Ca / Ghi Chú Thêm</label>
+              <label className="form-label">Ghi Chú Tiền Mặt / Ghi Chú Thêm</label>
               <input
                 type="text"
                 className="form-input"
-                placeholder="VD: Ca sáng nhượng tiền lẻ, thu ngân Nguyễn Văn A..."
+                placeholder="VD: Nhượng tiền lẻ đầu ngày, thu ngân..."
                 value={note}
                 onChange={e => setNote(e.target.value)}
               />
@@ -365,7 +365,7 @@ export default function DailyCashModal({ isOpen, onClose, onSaved, formatCurrenc
                         <button
                           type="button"
                           className="icon-btn btn-delete-sm"
-                          title="Xóa bản ghi chốt ca này"
+                          title="Xóa bản ghi chốt tiền mặt này"
                           onClick={() => handleDeleteHistory(item.id)}
                         >
                           <Trash2 size={15} />

@@ -231,11 +231,11 @@ export default function Dashboard({
             <span className="fund-sub-title text-muted">Quản lý quỹ tiền mặt thực tế và tài khoản ngân hàng</span>
           </div>
           <button
-            className="btn-primary btn-sm btn-cash-tally"
+            className="btn-secondary btn-sm btn-cash-tally"
             onClick={onOpenDailyCashModal}
           >
-            <Calculator size={15} />
-            <span>{todayDailyCash ? 'Sửa Chốt Ca' : 'Chốt Ca / Kiểm Két'}</span>
+            <Calculator size={14} color="var(--primary-600)" />
+            <span>{todayDailyCash ? 'Sửa Chốt Tiền Mặt' : 'Chốt Tiền Mặt'}</span>
           </button>
         </div>
 
@@ -260,7 +260,7 @@ export default function Dashboard({
                   </strong>
                 </div>
               ) : (
-                <span className="fund-tally-hint">Tích lũy sổ: {currencyFormatter(stats.cashBalance)} (Chưa chốt ca hôm nay)</span>
+                <span className="fund-tally-hint">Tích lũy sổ: {currencyFormatter(stats.cashBalance)} (Chưa chốt tiền mặt hôm nay)</span>
               )}
             </div>
           </div>
@@ -284,7 +284,7 @@ export default function Dashboard({
         {todayDailyCash ? (
           <div className="fund-reconcile-banner">
             <div className="reconcile-details">
-              <span className="reconcile-title">📌 Chi Tiết Chốt Ca Ngày {todayStr.split('-').reverse().join('/')}:</span>
+              <span className="reconcile-title">📌 Chi Tiết Chốt Tiền Mặt Ngày {todayStr.split('-').reverse().join('/')}:</span>
               <div className="reconcile-chips">
                 <span>Đầu ngày: <strong>{currencyFormatter(todayDailyCash.opening_cash)}</strong></span>
                 <span className="reconcile-arrow">➔</span>
@@ -316,7 +316,7 @@ export default function Dashboard({
         ) : (
           <div className="fund-reconcile-banner empty">
             <Sparkles size={16} className="text-emerald-500" style={{ flexShrink: 0 }} />
-            <span>Chưa chốt ca hôm nay. Nhấp <strong>"Chốt Ca / Kiểm Két"</strong> để nhập tiền mặt đầu ngày - cuối ngày và tự động đối chiếu với Sổ Thu Chi.</span>
+            <span>Chưa chốt tiền mặt hôm nay. Nhấp <strong>"Chốt Tiền Mặt"</strong> để nhập tiền mặt đầu ngày - cuối ngày và tự động đối chiếu với Sổ Thu Chi.</span>
           </div>
         )}
       </div>

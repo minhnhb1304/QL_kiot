@@ -102,17 +102,18 @@ export default function Header({
             <button
               className="btn-primary btn-quick-add"
               onClick={onOpenAddModal}
+              title="Ghi nhận giao dịch thu/chi mới (Phím tắt chính)"
             >
-              <PlusCircle size={15} />
-              <span className="quick-add-text">Ghi Thu/Chi</span>
+              <PlusCircle size={18} />
+              <span className="quick-add-text">Ghi Thu / Chi</span>
             </button>
 
             <button
               className="btn-secondary btn-cash-tally"
               onClick={onOpenDailyCashModal}
-              title="Nhập số tiền mặt đầu ngày & cuối ngày (Chốt ca)"
+              title="Nhập số tiền mặt đầu ngày & cuối ngày (Chốt tiền mặt)"
             >
-              <Calculator size={15} color="var(--primary-600)" />
+              <Calculator size={13} color="var(--primary-600)" />
               <span className="btn-cash-text">Chốt Tiền Mặt</span>
             </button>
 
@@ -121,7 +122,7 @@ export default function Header({
               onClick={onOpenSmsModal}
               title="SMS Banking tự động"
             >
-              <Smartphone size={15} color="var(--primary-600)" />
+              <Smartphone size={13} color="var(--primary-600)" />
               <span className="btn-sms-text">SMS Bank</span>
             </button>
 

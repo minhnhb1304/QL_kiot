@@ -461,18 +461,38 @@
 .header-actions {
   display: flex;
   align-items: center;
-  gap: 0.4rem;
+  gap: 0.5rem;
   flex-shrink: 0;
 }
 
+/* Primary Main Action: Ghi Thu / Chi */
 .btn-quick-add {
-  font-size: 0.85rem;
-  padding: 0.5rem 1rem;
+  font-size: 0.92rem;
+  font-weight: 700;
+  padding: 0.55rem 1.25rem;
+  box-shadow: 0 3px 12px rgba(16, 185, 129, 0.28);
+  letter-spacing: 0.01em;
+  transition: all var(--transition-fast);
+}
+
+.btn-quick-add:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 5px 16px rgba(16, 185, 129, 0.38);
+}
+
+/* Secondary Compact Utilities */
+.btn-cash-tally {
+  padding: 0.38rem 0.65rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  border-radius: var(--radius-full);
 }
 
 .btn-sms-action {
-  padding: 0.5rem 0.75rem;
-  font-size: 0.85rem;
+  padding: 0.38rem 0.65rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  border-radius: var(--radius-full);
 }
 
 .btn-sms-text {
