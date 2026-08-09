@@ -1,10 +1,11 @@
-import React, { useMemo } from 'react';
-import { Banknote, Wallet, Target, FileSpreadsheet } from 'lucide-react';
+import React, { useMemo, useState, useEffect } from 'react';
+import { Banknote, Wallet, Target, FileSpreadsheet, Calculator, Sparkles, CheckCircle2, AlertTriangle } from 'lucide-react';
 import KpiCard from '../components/KpiCard';
 import CashflowChart from '../components/CashflowChart';
 import ExpensePieChart from '../components/ExpensePieChart';
 import { createCurrencyFormatter } from '../utils/currency';
 import { exportDashboardStatsToExcel } from '../utils/excelExport';
+import { storageService } from '../services/storageService';
 
 const RANGE_LABELS = {
   TODAY: 'Hôm nay',
@@ -20,8 +21,24 @@ export default function Dashboard({
   theme,
   transactions = [],
   storeProfile,
-  formatCurrency
+  formatCurrency,
+  onOpenDailyCashModal
 }) {
+  const [todayDailyCash, setTodayDailyCash] = useState(null);
+  const todayStr = useMemo(() => new Date().toISOString().split('T')[0], []);
+
+  const todayLoggedCashNet = useMemo(() => {
+    const dayTxs = (transactions || []).filter(t => t.transaction_date === todayStr && t.payment_source === 'CASH');
+    const cashIn = dayTxs.filter(t => t.type === 'IN').reduce((acc, t) => acc + Number(t.amount || 0), 0);
+    const cashOut = dayTxs.filter(t => t.type === 'OUT').reduce((acc, t) => acc + Number(t.amount || 0), 0);
+    return cashIn - cashOut;
+  }, [transactions, todayStr]);
+
+  useEffect(() => {
+    storageService.getDailyCashByDate(todayStr)
+      .then(setTodayDailyCash)
+      .catch(console.error);
+  }, [transactions, todayStr]);
   const currencyFormatter = useMemo(
     () => formatCurrency || createCurrencyFormatter(storeProfile?.currency || 'VND'),
     [formatCurrency, storeProfile?.currency]
@@ -206,34 +223,102 @@ export default function Dashboard({
         />
       </div>
 
-      {/* Fund Control Card */}
+      {/* Unified Fund Control & Daily Cash Tally Card */}
       <div className="card fund-control-card">
-        <h3>Số Dư Nguồn Tiền</h3>
+        <div className="fund-control-header">
+          <div>
+            <h3>Số Dư & Kiểm Két Tiền Mặt</h3>
+            <span className="fund-sub-title text-muted">Quản lý quỹ tiền mặt thực tế và tài khoản ngân hàng</span>
+          </div>
+          <button
+            className="btn-primary btn-sm btn-cash-tally"
+            onClick={onOpenDailyCashModal}
+          >
+            <Calculator size={15} />
+            <span>{todayDailyCash ? 'Sửa Chốt Ca' : 'Chốt Ca / Kiểm Két'}</span>
+          </button>
+        </div>
+
         <div className="fund-grid">
+          {/* Fund Box 1: Tiền Mặt Két Tiền */}
           <div className="fund-box fund-cash">
             <div className="fund-icon">
-              <Wallet size={22} />
+              <Wallet size={24} />
             </div>
             <div className="fund-info">
-              <span className="fund-label">Tiền Mặt Tại Quầy</span>
+              <span className="fund-label">Tiền Mặt Két Tiền (Quầy)</span>
               <strong className="fund-amount text-orange">
-                {currencyFormatter(stats.cashBalance)}
+                {todayDailyCash
+                  ? currencyFormatter(todayDailyCash.closing_cash)
+                  : currencyFormatter(stats.cashBalance)}
               </strong>
+              {todayDailyCash ? (
+                <div className="fund-tally-badge">
+                  <span className="tally-label">Thực thu hôm nay (Cuối - Đầu):</span>
+                  <strong className={`tally-value ${todayDailyCash.total_cash >= 0 ? 'text-green' : 'text-red'}`}>
+                    {todayDailyCash.total_cash >= 0 ? '+' : ''}{currencyFormatter(todayDailyCash.total_cash)}
+                  </strong>
+                </div>
+              ) : (
+                <span className="fund-tally-hint">Tích lũy sổ: {currencyFormatter(stats.cashBalance)} (Chưa chốt ca hôm nay)</span>
+              )}
             </div>
           </div>
 
+          {/* Fund Box 2: Tài Khoản Ngân Hàng */}
           <div className="fund-box fund-bank">
             <div className="fund-icon">
-              <Banknote size={22} />
+              <Banknote size={24} />
             </div>
             <div className="fund-info">
-              <span className="fund-label">Tài Khoản Ngân Hàng</span>
+              <span className="fund-label">Tài Khoản Ngân Hàng (QR)</span>
               <strong className="fund-amount text-blue">
                 {currencyFormatter(stats.bankBalance)}
               </strong>
+              <span className="fund-tally-hint">Doanh thu QR & Chuyển khoản</span>
             </div>
           </div>
         </div>
+
+        {/* Reconciliation Status Banner */}
+        {todayDailyCash ? (
+          <div className="fund-reconcile-banner">
+            <div className="reconcile-details">
+              <span className="reconcile-title">📌 Chi Tiết Chốt Ca Ngày {todayStr.split('-').reverse().join('/')}:</span>
+              <div className="reconcile-chips">
+                <span>Đầu ngày: <strong>{currencyFormatter(todayDailyCash.opening_cash)}</strong></span>
+                <span className="reconcile-arrow">➔</span>
+                <span>Cuối ngày: <strong>{currencyFormatter(todayDailyCash.closing_cash)}</strong></span>
+                <span className="reconcile-arrow">➔</span>
+                <span>Thực thu: <strong className={todayDailyCash.total_cash >= 0 ? 'text-green' : 'text-red'}>{todayDailyCash.total_cash >= 0 ? '+' : ''}{currencyFormatter(todayDailyCash.total_cash)}</strong></span>
+              </div>
+            </div>
+
+            {todayLoggedCashNet > 0 && (
+              <div className={`reconcile-status-chip ${todayDailyCash.total_cash === todayLoggedCashNet ? 'status-match' : 'status-diff'}`}>
+                {todayDailyCash.total_cash === todayLoggedCashNet ? (
+                  <>
+                    <CheckCircle2 size={15} />
+                    <span>Khớp 100% với Sổ Thu Chi ({currencyFormatter(todayLoggedCashNet)})</span>
+                  </>
+                ) : (
+                  <>
+                    <AlertTriangle size={15} />
+                    <span>
+                      Lệch {todayDailyCash.total_cash - todayLoggedCashNet > 0 ? '+' : ''}
+                      {currencyFormatter(todayDailyCash.total_cash - todayLoggedCashNet)} so với Sổ Thu Chi ({currencyFormatter(todayLoggedCashNet)})
+                    </span>
+                  </>
+                )}
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="fund-reconcile-banner empty">
+            <Sparkles size={16} className="text-emerald-500" style={{ flexShrink: 0 }} />
+            <span>Chưa chốt ca hôm nay. Nhấp <strong>"Chốt Ca / Kiểm Két"</strong> để nhập tiền mặt đầu ngày - cuối ngày và tự động đối chiếu với Sổ Thu Chi.</span>
+          </div>
+        )}
       </div>
     </div>
   );

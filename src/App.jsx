@@ -7,6 +7,7 @@ import LoginPage from './pages/LoginPage';
 import TransactionFormModal from './components/TransactionFormModal';
 import SmsAutomationModal from './components/SmsAutomationModal';
 import ProfileEditModal from './components/ProfileEditModal';
+import DailyCashModal from './components/DailyCashModal';
 import { storageService } from './services/storageService';
 import { authService } from './services/authService';
 import { storeProfileService } from './services/storeProfileService';
@@ -24,6 +25,7 @@ export default function App() {
   const [theme, setTheme] = useState(localStorage.getItem('jl_theme') || 'light');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSmsModalOpen, setIsSmsModalOpen] = useState(false);
+  const [isDailyCashModalOpen, setIsDailyCashModalOpen] = useState(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [storeProfile, setStoreProfile] = useState(null);
 
@@ -232,6 +234,7 @@ export default function App() {
         setActiveTab={setActiveTab}
         onOpenAddModal={() => setIsModalOpen(true)}
         onOpenSmsModal={() => setIsSmsModalOpen(true)}
+        onOpenDailyCashModal={() => setIsDailyCashModalOpen(true)}
         theme={theme}
         toggleTheme={toggleTheme}
         onResetData={handleResetData}
@@ -250,6 +253,7 @@ export default function App() {
             setDateRange={setDateRange}
             theme={theme}
             onOpenAddModal={() => setIsModalOpen(true)}
+            onOpenDailyCashModal={() => setIsDailyCashModalOpen(true)}
             transactions={transactions}
             storeProfile={storeProfile}
             formatCurrency={formatCurrency}
@@ -281,6 +285,16 @@ export default function App() {
         onClose={() => setIsModalOpen(false)}
         onSave={handleSaveTransaction}
         categories={categories}
+      />
+
+      {/* Modal Daily Cash Entry (Chốt tiền mặt đầu ngày - cuối ngày) */}
+      <DailyCashModal
+        isOpen={isDailyCashModalOpen}
+        onClose={() => setIsDailyCashModalOpen(false)}
+        onSaved={loadData}
+        formatCurrency={formatCurrency}
+        transactions={transactions}
+        showToast={showToast}
       />
 
       {/* Modal SMS Automation & Simulator */}

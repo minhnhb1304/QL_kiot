@@ -288,6 +288,114 @@ class StorageService {
       amount: peakAmount
     };
   }
+
+  // ── Daily Cash Tally (Nhập số tiền mặt đầu ngày - cuối ngày) ──
+  async getDailyCashRecords(filters = {}) {
+    await this.init();
+    let collection = db.daily_cash_records.orderBy('date').reverse();
+    let items = await collection.toArray();
+
+    if (filters.startDate && filters.endDate) {
+      items = items.filter(r => r.date >= filters.startDate && r.date <= filters.endDate);
+    }
+    return items;
+  }
+
+  async getDailyCashByDate(date) {
+    await this.init();
+    const record = await db.daily_cash_records.where('date').equals(date).first();
+    return record || null;
+  }
+
+  async getYesterdayClosingCash(currentDate) {
+    await this.init();
+    const records = await db.daily_cash_records
+      .where('date')
+      .below(currentDate)
+      .reverse()
+      .sortBy('date');
+    if (records.length > 0) {
+      return records[0].closing_cash || 0;
+    }
+    return 0;
+  }
+
+  async saveDailyCashRecord({ date, opening_cash, closing_cash, note = '', saveAsTransaction = false }) {
+    await this.init();
+    const openVal = Number(opening_cash) || 0;
+    const closeVal = Number(closing_cash) || 0;
+    const totalCash = closeVal - openVal; // Hiệu = Cuối ngày - Đầu ngày
+
+    const existing = await db.daily_cash_records.where('date').equals(date).first();
+    let recordId;
+    const nowIso = new Date().toISOString();
+
+    if (existing) {
+      recordId = existing.id;
+      await db.daily_cash_records.update(existing.id, {
+        opening_cash: openVal,
+        closing_cash: closeVal,
+        total_cash: totalCash,
+        note: note,
+        updated_at: nowIso
+      });
+    } else {
+      recordId = await db.daily_cash_records.add({
+        date: date,
+        opening_cash: openVal,
+        closing_cash: closeVal,
+        total_cash: totalCash,
+        note: note,
+        created_at: nowIso,
+        updated_at: nowIso
+      });
+    }
+
+    // Optionally sync / save as a transaction in Sổ Thu Chi if requested and totalCash > 0
+    if (saveAsTransaction && totalCash > 0) {
+      const formattedDate = date.split('-').reverse().join('/');
+      const syncNote = `[Chốt tiền mặt ${formattedDate}] ${note ? `(${note})` : ''}`.trim();
+      
+      const allTxForDate = await db.transactions.where('transaction_date').equals(date).toArray();
+      const existingSyncTx = allTxForDate.find(t => t.note && t.note.includes('[Chốt tiền mặt'));
+
+      if (existingSyncTx) {
+        await db.transactions.update(existingSyncTx.id, {
+          amount: totalCash,
+          note: syncNote
+        });
+      } else {
+        const categories = await this.getCategories();
+        const catIn = categories.find(c => c.type === 'IN') || { id: 1, name: 'Doanh thu nước ép' };
+        await db.transactions.add({
+          type: 'IN',
+          category_id: catIn.id,
+          category_name: catIn.name,
+          amount: totalCash,
+          payment_source: 'CASH',
+          note: syncNote,
+          transaction_date: date,
+          created_at: nowIso
+        });
+      }
+    }
+
+    return {
+      id: recordId,
+      date,
+      opening_cash: openVal,
+      closing_cash: closeVal,
+      total_cash: totalCash,
+      note
+    };
+  }
+
+  async deleteDailyCashRecord(id) {
+    await this.init();
+    await db.daily_cash_records.delete(id);
+    return true;
+  }
 }
 
 export const storageService = new StorageService();
+

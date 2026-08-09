@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
   Citrus, PlusCircle, Sun, Moon, BarChart2, BookOpen,
   LogOut, UserCheck, Smartphone, Menu, X,
-  TrendingUp, Edit2, Store
+  TrendingUp, Edit2, Store, Calculator
 } from 'lucide-react';
 
 export default function Header({
@@ -10,6 +10,7 @@ export default function Header({
   setActiveTab,
   onOpenAddModal,
   onOpenSmsModal,
+  onOpenDailyCashModal,
   theme,
   toggleTheme,
   currentUser,
@@ -104,6 +105,15 @@ export default function Header({
             >
               <PlusCircle size={15} />
               <span className="quick-add-text">Ghi Thu/Chi</span>
+            </button>
+
+            <button
+              className="btn-secondary btn-cash-tally"
+              onClick={onOpenDailyCashModal}
+              title="Nhập số tiền mặt đầu ngày & cuối ngày (Chốt ca)"
+            >
+              <Calculator size={15} color="var(--primary-600)" />
+              <span className="btn-cash-text">Chốt Tiền Mặt</span>
             </button>
 
             <button
@@ -252,6 +262,14 @@ export default function Header({
           >
             <PlusCircle size={17} />
             <span>Ghi Thu / Chi</span>
+          </button>
+
+          <button
+            className="drawer-action-btn"
+            onClick={() => { setDrawerOpen(false); onOpenDailyCashModal(); }}
+          >
+            <Calculator size={17} color="var(--primary-600)" />
+            <span>Chốt Tiền Mặt Đầu/Cuối Ngày</span>
           </button>
 
           <button

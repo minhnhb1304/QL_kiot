@@ -34,6 +34,14 @@ db.version(5).stores({
   store_profile: '++id, &owner_username'
 });
 
+db.version(6).stores({
+  categories: '++id, name, type, icon, color',
+  transactions: '++id, type, category_id, category_name, amount, payment_source, note, transaction_date, created_at',
+  users: '++id, &username, passwordHash, pin, fullName, role, phone, email, created_at',
+  store_profile: '++id, &owner_username',
+  daily_cash_records: '++id, &date, opening_cash, closing_cash, total_cash, note, created_at'
+});
+
 // Clear all transactions from database
 export async function clearTransactions() {
   await db.transactions.clear();

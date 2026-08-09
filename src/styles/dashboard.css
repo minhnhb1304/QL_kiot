@@ -2408,3 +2408,403 @@
   max-width: 520px;
 }
 
+/* ─────────────────────────────────────────────
+   DAILY CASH TALLY MODAL & WIDGETS
+───────────────────────────────────────────── */
+.daily-cash-modal {
+  max-width: 540px;
+}
+
+.modal-header-title {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.daily-cash-tabs {
+  display: flex;
+  border-bottom: 1px solid var(--border-color);
+  background-color: var(--bg-main);
+  padding: 0 1rem;
+}
+
+.dc-tab {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.75rem 1rem;
+  border: none;
+  background: transparent;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all var(--transition-fast);
+}
+
+.dc-tab:hover {
+  color: var(--text-main);
+}
+
+.dc-tab.active {
+  color: var(--primary-600);
+  border-bottom-color: var(--primary-500);
+}
+
+.label-with-action {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.35rem;
+}
+
+.btn-text-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  background: none;
+  border: none;
+  color: var(--primary-600);
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  transition: background-color var(--transition-fast);
+}
+
+.btn-text-link:hover {
+  background-color: var(--primary-50);
+}
+
+/* Live Result Card (HIỆU = TỔNG THU TIỀN MẶT 1 NGÀY) */
+.dc-result-card {
+  border-radius: var(--radius-lg);
+  padding: 1.15rem;
+  margin: 0.5rem 0;
+  border: 1px solid rgba(16, 185, 129, 0.25);
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(52, 211, 153, 0.03) 100%);
+  transition: all var(--transition-normal);
+}
+
+.dc-result-card.negative {
+  border-color: rgba(239, 68, 68, 0.25);
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.08) 0%, rgba(248, 113, 113, 0.03) 100%);
+}
+
+.dc-result-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+
+.dc-result-title {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  color: var(--primary-700);
+  text-transform: uppercase;
+}
+
+.dc-result-card.negative .dc-result-title {
+  color: var(--expense-red-500);
+}
+
+.dc-formula-tag {
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  background-color: var(--bg-surface);
+  color: var(--text-muted);
+  border: 1px solid var(--border-color);
+}
+
+.dc-result-amount {
+  font-size: 1.8rem;
+  font-weight: 900;
+  color: var(--primary-600);
+  margin-bottom: 0.5rem;
+  letter-spacing: -0.02em;
+}
+
+.dc-result-card.negative .dc-result-amount {
+  color: var(--expense-red-500);
+}
+
+.dc-result-breakdown {
+  display: flex;
+  gap: 1.25rem;
+  font-size: 0.82rem;
+  padding-top: 0.5rem;
+  border-top: 1px dashed rgba(0, 0, 0, 0.08);
+}
+
+[data-theme="dark"] .dc-result-breakdown {
+  border-top-color: rgba(255, 255, 255, 0.1);
+}
+
+.dc-comparison-box {
+  margin-top: 0.75rem;
+  padding: 0.65rem 0.85rem;
+  border-radius: var(--radius-md);
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  font-size: 0.8rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.dc-comp-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: var(--text-muted);
+}
+
+.dc-comp-status {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding-top: 0.25rem;
+}
+
+.dc-comp-status.status-match {
+  color: var(--primary-600);
+}
+
+.dc-comp-status.status-diff {
+  color: var(--accent-orange-600);
+}
+
+/* History List inside Modal */
+.dc-history-container {
+  padding: 1rem 1.25rem;
+  max-height: 420px;
+  overflow-y: auto;
+}
+
+.dc-history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.dc-history-card {
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 0.85rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  position: relative;
+  transition: border-color var(--transition-fast);
+}
+
+.dc-history-card:hover {
+  border-color: var(--border-hover);
+}
+
+.dc-history-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.dc-history-date {
+  font-size: 0.9rem;
+  color: var(--text-main);
+}
+
+.dc-history-diff {
+  font-size: 1rem;
+  font-weight: 800;
+}
+
+.dc-history-details {
+  display: flex;
+  gap: 1rem;
+  font-size: 0.8rem;
+}
+
+.dc-detail-chip {
+  background-color: var(--bg-main);
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+}
+
+.dc-history-note {
+  font-size: 0.78rem;
+  margin-top: 0.1rem;
+}
+
+.dc-history-actions {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+}
+
+.checkbox-group {
+  margin-top: 0.25rem;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--text-main);
+  cursor: pointer;
+}
+
+.checkbox-label input[type="checkbox"] {
+  width: 17px;
+  height: 17px;
+  accent-color: var(--primary-500);
+  cursor: pointer;
+}
+
+/* Header & Dashboard Cash Tally Button Styles */
+.btn-cash-tally {
+  border-color: rgba(16, 185, 129, 0.3);
+  background-color: rgba(16, 185, 129, 0.08);
+  color: var(--primary-700);
+}
+
+[data-theme="dark"] .btn-cash-tally {
+  color: #34D399;
+}
+
+.btn-cash-tally:hover {
+  background-color: rgba(16, 185, 129, 0.15);
+  border-color: var(--primary-500);
+}
+
+/* ─────────────────────────────────────────────
+   UNIFIED FUND CONTROL & RECONCILIATION CARD
+───────────────────────────────────────────── */
+.fund-control-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.2rem;
+}
+
+.fund-sub-title {
+  font-size: 0.8rem;
+  display: block;
+  margin-top: 0.15rem;
+}
+
+.fund-tally-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.8rem;
+  margin-top: 0.4rem;
+  background-color: rgba(16, 185, 129, 0.08);
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(16, 185, 129, 0.15);
+}
+
+.tally-label {
+  color: var(--text-muted);
+}
+
+.tally-value {
+  font-weight: 700;
+}
+
+.fund-tally-hint {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  display: block;
+  margin-top: 0.35rem;
+}
+
+.fund-reconcile-banner {
+  margin-top: 1.15rem;
+  padding: 0.9rem 1.1rem;
+  border-radius: var(--radius-md);
+  background-color: var(--bg-main);
+  border: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.fund-reconcile-banner.empty {
+  font-size: 0.83rem;
+  color: var(--text-muted);
+}
+
+.reconcile-details {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.reconcile-title {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.reconcile-chips {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.84rem;
+  flex-wrap: wrap;
+}
+
+.reconcile-arrow {
+  color: var(--text-light);
+  font-size: 0.75rem;
+}
+
+.reconcile-status-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.4rem 0.8rem;
+  border-radius: var(--radius-full);
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.reconcile-status-chip.status-match {
+  background-color: rgba(16, 185, 129, 0.12);
+  color: var(--primary-700);
+  border: 1px solid rgba(16, 185, 129, 0.25);
+}
+
+[data-theme="dark"] .reconcile-status-chip.status-match {
+  color: #34D399;
+}
+
+.reconcile-status-chip.status-diff {
+  background-color: rgba(249, 115, 22, 0.12);
+  color: var(--accent-orange-600);
+  border: 1px solid rgba(249, 115, 22, 0.25);
+}
+
+
+
