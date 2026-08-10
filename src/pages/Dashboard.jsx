@@ -117,7 +117,7 @@ export default function Dashboard({
                 }
               }}
             >
-              <option value="">Chọn tháng khác...</option>
+              <option value="">Chọn tháng</option>
               {availableMonths.map(m => (
                 <option key={m.key} value={`MONTH_${m.key}`}>
                   {m.label}
