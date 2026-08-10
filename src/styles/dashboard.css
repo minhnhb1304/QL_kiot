@@ -1254,6 +1254,45 @@
   background-color: #FEF2F2;
 }
 
+.action-buttons-cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+}
+
+.mobile-tx-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.btn-edit {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  transition: all var(--transition-fast);
+}
+
+.btn-edit:hover {
+  color: var(--primary-600);
+  background-color: var(--primary-50);
+}
+
+.btn-edit-sm {
+  width: 26px;
+  height: 26px;
+  color: var(--text-light);
+  border-radius: var(--radius-sm);
+  transition: all var(--transition-fast);
+}
+
+.btn-edit-sm:hover {
+  color: var(--primary-600);
+  background-color: var(--primary-50);
+}
+
 .empty-column-state {
   text-align: center;
   padding: 2rem 1rem;
@@ -2474,29 +2513,49 @@
 
 .label-with-action {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.5rem;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.25rem;
   margin-bottom: 0.35rem;
+}
+
+.label-with-action .form-label {
+  margin-bottom: 0;
 }
 
 .btn-text-link {
   display: inline-flex;
   align-items: center;
-  gap: 0.25rem;
-  background: none;
-  border: none;
-  color: var(--primary-600);
+  gap: 0.35rem;
+  background-color: var(--primary-50);
+  border: 1px dashed var(--primary-300);
+  color: var(--primary-700);
   font-size: 0.78rem;
   font-weight: 600;
   cursor: pointer;
-  padding: 2px 6px;
+  padding: 3px 8px;
   border-radius: var(--radius-sm);
-  transition: background-color var(--transition-fast);
+  transition: all var(--transition-fast);
+  white-space: nowrap;
+  flex-shrink: 0;
+  margin-top: 0.1rem;
+  margin-bottom: 0.15rem;
 }
 
 .btn-text-link:hover {
-  background-color: var(--primary-50);
+  background-color: var(--primary-100);
+  border-color: var(--primary-500);
+}
+
+[data-theme="dark"] .btn-text-link {
+  background-color: rgba(16, 185, 129, 0.12);
+  border-color: rgba(16, 185, 129, 0.35);
+  color: #34D399;
+}
+
+[data-theme="dark"] .btn-text-link:hover {
+  background-color: rgba(16, 185, 129, 0.25);
+  border-color: #34D399;
 }
 
 /* Live Result Card (HIỆU = TỔNG THU TIỀN MẶT 1 NGÀY) */
@@ -2769,6 +2828,8 @@
 }
 
 .fund-reconcile-banner.empty {
+  justify-content: flex-start;
+  gap: 0.5rem;
   font-size: 0.83rem;
   color: var(--text-muted);
 }

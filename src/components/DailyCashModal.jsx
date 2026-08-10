@@ -193,7 +193,7 @@ export default function DailyCashModal({ isOpen, onClose, onSaved, formatCurrenc
                     onClick={copyYesterdayCash}
                     title="Lấy số tiền mặt cuối ngày trước làm đầu ngày hôm nay"
                   >
-                    <Copy size={13} />
+                    <Copy size={13} style={{ flexShrink: 0 }} />
                     <span>Tiền ngày trước ({formatCurrency(yesterdayCash)})</span>
                   </button>
                 )}
