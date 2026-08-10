@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { Search, Trash2, FileText, FileSpreadsheet } from 'lucide-react';
+import { Search, Trash2, FileText, FileSpreadsheet, Pencil } from 'lucide-react';
 import { createCurrencyFormatter } from '../utils/currency';
 import { exportTransactionsToExcel } from '../utils/excelExport';
 
-export default function TransactionList({ transactions, onDeleteTransaction, onOpenAddModal, currency = 'VND', formatCurrency, storeProfile }) {
+export default function TransactionList({ transactions, onDeleteTransaction, onEditTransaction, onOpenAddModal, currency = 'VND', formatCurrency, storeProfile }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [viewMode, setViewMode] = useState('ALL'); // 'ALL', 'SPLIT', 'IN', 'OUT'
   const [sourceFilter, setSourceFilter] = useState('ALL');
@@ -215,6 +215,15 @@ export default function TransactionList({ transactions, onDeleteTransaction, onO
                         <span className={`badge ${item.payment_source === 'BANK' ? 'badge-bank' : 'badge-cash'}`}>
                           {item.payment_source === 'BANK' ? 'Ngân hàng' : 'Tiền mặt'}
                         </span>
+                        {onEditTransaction && (
+                          <button
+                            className="icon-btn btn-edit-sm"
+                            title="Chỉnh sửa"
+                            onClick={() => onEditTransaction(item)}
+                          >
+                            <Pencil size={14} />
+                          </button>
+                        )}
                         <button
                           className="icon-btn btn-delete-sm"
                           title="Xóa"
@@ -262,6 +271,15 @@ export default function TransactionList({ transactions, onDeleteTransaction, onO
                         <span className={`badge ${item.payment_source === 'BANK' ? 'badge-bank' : 'badge-cash'}`}>
                           {item.payment_source === 'BANK' ? 'Ngân hàng' : 'Tiền mặt'}
                         </span>
+                        {onEditTransaction && (
+                          <button
+                            className="icon-btn btn-edit-sm"
+                            title="Chỉnh sửa"
+                            onClick={() => onEditTransaction(item)}
+                          >
+                            <Pencil size={14} />
+                          </button>
+                        )}
                         <button
                           className="icon-btn btn-delete-sm"
                           title="Xóa"
@@ -323,13 +341,24 @@ export default function TransactionList({ transactions, onDeleteTransaction, onO
                           {item.type === 'IN' ? '+' : '-'}{formatVND(item.amount)}
                         </td>
                         <td className="text-center">
-                          <button
-                            className="icon-btn btn-delete"
-                            title="Xóa giao dịch này"
-                            onClick={() => onDeleteTransaction(item.id)}
-                          >
-                            <Trash2 size={16} />
-                          </button>
+                          <div className="action-buttons-cell">
+                            {onEditTransaction && (
+                              <button
+                                className="icon-btn btn-edit"
+                                title="Chỉnh sửa giao dịch này"
+                                onClick={() => onEditTransaction(item)}
+                              >
+                                <Pencil size={16} />
+                              </button>
+                            )}
+                            <button
+                              className="icon-btn btn-delete"
+                              title="Xóa giao dịch này"
+                              onClick={() => onDeleteTransaction(item.id)}
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))}
@@ -364,13 +393,24 @@ export default function TransactionList({ transactions, onDeleteTransaction, onO
                           {item.payment_source === 'BANK' ? 'Bank' : 'Tiền mặt'}
                         </span>
                       </div>
-                      <button
-                        className="icon-btn btn-delete-sm"
-                        title="Xóa"
-                        onClick={() => onDeleteTransaction(item.id)}
-                      >
-                        <Trash2 size={14} />
-                      </button>
+                      <div className="mobile-tx-actions">
+                        {onEditTransaction && (
+                          <button
+                            className="icon-btn btn-edit-sm"
+                            title="Chỉnh sửa"
+                            onClick={() => onEditTransaction(item)}
+                          >
+                            <Pencil size={14} />
+                          </button>
+                        )}
+                        <button
+                          className="icon-btn btn-delete-sm"
+                          title="Xóa"
+                          onClick={() => onDeleteTransaction(item.id)}
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
                     </div>
                   </div>
                 ))}

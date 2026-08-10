@@ -142,6 +142,18 @@ class StorageService {
     return true;
   }
 
+  // Update existing transaction
+  async updateTransaction(id, updates) {
+    await this.init();
+    const updatedTx = {
+      ...updates,
+      amount: Number(updates.amount),
+      updated_at: new Date().toISOString()
+    };
+    await db.transactions.update(id, updatedTx);
+    return { id, ...updatedTx };
+  }
+
   // Get Summary Statistics for Dashboard
   async getStats(startDate, endDate) {
     await this.init();

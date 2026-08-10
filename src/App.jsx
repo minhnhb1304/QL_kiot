@@ -24,7 +24,18 @@ export default function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [theme, setTheme] = useState(localStorage.getItem('jl_theme') || 'light');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingTransaction, setEditingTransaction] = useState(null);
   const [isSmsModalOpen, setIsSmsModalOpen] = useState(false);
+
+  const handleOpenAddModal = () => {
+    setEditingTransaction(null);
+    setIsModalOpen(true);
+  };
+
+  const handleEditTransaction = (tx) => {
+    setEditingTransaction(tx);
+    setIsModalOpen(true);
+  };
   const [isDailyCashModalOpen, setIsDailyCashModalOpen] = useState(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [storeProfile, setStoreProfile] = useState(null);
@@ -149,11 +160,17 @@ export default function App() {
     }
   }, [session, loadData]);
 
-  // Handle adding new transaction
+  // Handle adding or updating transaction
   const handleSaveTransaction = async (formData) => {
-    await storageService.addTransaction(formData);
+    if (formData.id) {
+      await storageService.updateTransaction(formData.id, formData);
+      showToast('Đã cập nhật giao dịch!', 'success');
+    } else {
+      await storageService.addTransaction(formData);
+      showToast('Đã lưu giao dịch mới!', 'success');
+    }
+    setEditingTransaction(null);
     await loadData();
-    showToast('Đã lưu giao dịch mới!', 'success');
   };
 
   // Handle parsing & processing SMS Banking text
@@ -232,7 +249,7 @@ export default function App() {
       <Header
         activeTab={activeTab}
         setActiveTab={setActiveTab}
-        onOpenAddModal={() => setIsModalOpen(true)}
+        onOpenAddModal={handleOpenAddModal}
         onOpenSmsModal={() => setIsSmsModalOpen(true)}
         onOpenDailyCashModal={() => setIsDailyCashModalOpen(true)}
         theme={theme}
@@ -252,7 +269,7 @@ export default function App() {
             dateRange={dateRange}
             setDateRange={setDateRange}
             theme={theme}
-            onOpenAddModal={() => setIsModalOpen(true)}
+            onOpenAddModal={handleOpenAddModal}
             onOpenDailyCashModal={() => setIsDailyCashModalOpen(true)}
             transactions={transactions}
             storeProfile={storeProfile}
@@ -263,7 +280,8 @@ export default function App() {
           <LedgerPage
             transactions={transactions}
             onDeleteTransaction={handleDeleteTransaction}
-            onOpenAddModal={() => setIsModalOpen(true)}
+            onEditTransaction={handleEditTransaction}
+            onOpenAddModal={handleOpenAddModal}
             storeProfile={storeProfile}
             formatCurrency={formatCurrency}
           />
@@ -282,9 +300,13 @@ export default function App() {
       {/* Modal Quick Transaction Entry */}
       <TransactionFormModal
         isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
+        onClose={() => {
+          setIsModalOpen(false);
+          setEditingTransaction(null);
+        }}
         onSave={handleSaveTransaction}
         categories={categories}
+        editingTransaction={editingTransaction}
       />
 
       {/* Modal Daily Cash Entry (Chốt tiền mặt đầu ngày - cuối ngày) */}

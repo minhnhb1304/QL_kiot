@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 
-export default function TransactionFormModal({ isOpen, onClose, onSave, categories }) {
+export default function TransactionFormModal({ isOpen, onClose, onSave, categories, editingTransaction = null }) {
   const [type, setType] = useState('OUT');
   const [categoryId, setCategoryId] = useState('');
   const [amount, setAmount] = useState('');
@@ -14,15 +14,25 @@ export default function TransactionFormModal({ isOpen, onClose, onSave, categori
 
   useEffect(() => {
     if (isOpen) {
-      setAmount('');
-      setNote('');
-      setDate(new Date().toISOString().split('T')[0]);
-      const currentFiltered = (categories || []).filter(c => c.type === type);
-      if (currentFiltered.length > 0) {
-        setCategoryId(currentFiltered[0].id);
+      if (editingTransaction) {
+        setType(editingTransaction.type || 'OUT');
+        setCategoryId(editingTransaction.category_id || '');
+        setAmount(editingTransaction.amount !== undefined ? String(editingTransaction.amount) : '');
+        setPaymentSource(editingTransaction.payment_source || 'BANK');
+        setNote(editingTransaction.note || '');
+        setDate(editingTransaction.transaction_date || new Date().toISOString().split('T')[0]);
+      } else {
+        setType('OUT');
+        setAmount('');
+        setNote('');
+        setDate(new Date().toISOString().split('T')[0]);
+        const currentFiltered = (categories || []).filter(c => c.type === 'OUT');
+        if (currentFiltered.length > 0) {
+          setCategoryId(currentFiltered[0].id);
+        }
       }
     }
-  }, [isOpen, type, categories]);
+  }, [isOpen, editingTransaction, categories]);
 
   if (!isOpen) return null;
 
@@ -37,7 +47,7 @@ export default function TransactionFormModal({ isOpen, onClose, onSave, categori
       name: type === 'IN' ? 'Doanh thu' : 'Chi phí'
     };
 
-    onSave({
+    const payload = {
       type,
       category_id: selectedCat.id,
       category_name: selectedCat.name,
@@ -45,7 +55,13 @@ export default function TransactionFormModal({ isOpen, onClose, onSave, categori
       payment_source: paymentSource,
       note,
       transaction_date: date
-    });
+    };
+
+    if (editingTransaction?.id) {
+      payload.id = editingTransaction.id;
+    }
+
+    onSave(payload);
 
     setAmount('');
     setNote('');
@@ -61,7 +77,7 @@ export default function TransactionFormModal({ isOpen, onClose, onSave, categori
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-content" onClick={e => e.stopPropagation()}>
         <div className="modal-header">
-          <h2>Ghi Thu / Chi</h2>
+          <h2>{editingTransaction ? 'Chỉnh Sửa Giao Dịch' : 'Ghi Thu / Chi'}</h2>
           <button className="icon-btn" onClick={onClose}><X size={20} /></button>
         </div>
 
@@ -190,7 +206,7 @@ export default function TransactionFormModal({ isOpen, onClose, onSave, categori
               Hủy
             </button>
             <button type="submit" className="btn-primary">
-              Lưu Giao Dịch
+              {editingTransaction ? 'Cập Nhật' : 'Lưu Giao Dịch'}
             </button>
           </div>
         </form>
