@@ -947,6 +947,7 @@
 
 .filter-group {
   display: flex;
+  flex-wrap: wrap;
   gap: 0.5rem;
   flex-shrink: 0;
 }
@@ -954,6 +955,35 @@
 .filter-select {
   min-width: 0;
   max-width: 160px;
+}
+
+.custom-date-range {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  padding: 0 0.5rem;
+}
+
+.custom-date-range .form-input {
+  border: none;
+  background: transparent;
+  padding: 0.4rem 0.2rem;
+  box-shadow: none;
+  width: 110px;
+}
+
+.custom-date-range .form-input:focus {
+  box-shadow: none;
+  outline: none;
+}
+
+.btn-clear-filters {
+  padding: 0.4rem 0.75rem;
+  font-size: 0.85rem;
+  border-radius: var(--radius-sm);
 }
 
 /* Transaction List: Mobile List vs Desktop Table */

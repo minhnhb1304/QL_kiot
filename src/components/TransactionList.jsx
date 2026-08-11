@@ -7,7 +7,10 @@ export default function TransactionList({ transactions, onDeleteTransaction, onE
   const [searchTerm, setSearchTerm] = useState('');
   const [viewMode, setViewMode] = useState('ALL'); // 'ALL', 'SPLIT', 'IN', 'OUT'
   const [sourceFilter, setSourceFilter] = useState('ALL');
-  const [dateFilter, setDateFilter] = useState('ALL'); // 'ALL', 'MONTH', 'WEEK', 'TODAY', 'MONTH_YYYY-MM'
+  const [dateFilter, setDateFilter] = useState('ALL'); // 'ALL', 'MONTH', 'WEEK', 'TODAY', 'MONTH_YYYY-MM', 'CUSTOM'
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('ALL');
 
   const formatter = formatCurrency || createCurrencyFormatter(currency);
 
@@ -30,6 +33,17 @@ export default function TransactionList({ transactions, onDeleteTransaction, onE
     });
 
     return Array.from(monthMap.values()).sort((a, b) => b.key.localeCompare(a.key));
+  }, [transactions]);
+
+  // Extract unique categories from transactions
+  const availableCategories = React.useMemo(() => {
+    const categories = new Set();
+    (transactions || []).forEach(t => {
+      if (t.category_name) {
+        categories.add(t.category_name);
+      }
+    });
+    return Array.from(categories).sort();
   }, [transactions]);
 
   // Filter transactions in UI
@@ -56,11 +70,16 @@ export default function TransactionList({ transactions, onDeleteTransaction, onE
     } else if (dateFilter.startsWith('MONTH_')) {
       const targetYearMonth = dateFilter.replace('MONTH_', '');
       matchesDate = t.transaction_date && t.transaction_date.startsWith(targetYearMonth);
+    } else if (dateFilter === 'CUSTOM') {
+      if (startDate && t.transaction_date < startDate) matchesDate = false;
+      if (endDate && t.transaction_date > endDate) matchesDate = false;
     }
     
-    if (viewMode === 'IN') return t.type === 'IN' && matchesSource && matchesSearch && matchesDate;
-    if (viewMode === 'OUT') return t.type === 'OUT' && matchesSource && matchesSearch && matchesDate;
-    return matchesSource && matchesSearch && matchesDate;
+    const matchesCategory = categoryFilter === 'ALL' || t.category_name === categoryFilter;
+
+    if (viewMode === 'IN') return t.type === 'IN' && matchesSource && matchesSearch && matchesDate && matchesCategory;
+    if (viewMode === 'OUT') return t.type === 'OUT' && matchesSource && matchesSearch && matchesDate && matchesCategory;
+    return matchesSource && matchesSearch && matchesDate && matchesCategory;
   });
 
   // Separate IN and OUT for SPLIT mode
@@ -72,6 +91,16 @@ export default function TransactionList({ transactions, onDeleteTransaction, onE
 
   const formatVND = (val) => {
     return formatter(val);
+  };
+
+  const handleClearFilters = () => {
+    setSearchTerm('');
+    setViewMode('ALL');
+    setSourceFilter('ALL');
+    setDateFilter('ALL');
+    setStartDate('');
+    setEndDate('');
+    setCategoryFilter('ALL');
   };
 
   const handleExportExcel = () => {
@@ -147,6 +176,7 @@ export default function TransactionList({ transactions, onDeleteTransaction, onE
             <option value="MONTH">Tháng này</option>
             <option value="WEEK">7 ngày qua</option>
             <option value="TODAY">Hôm nay</option>
+            <option value="CUSTOM">Tùy chọn...</option>
             {availableMonths.length > 0 && (
               <optgroup label="Tháng có dữ liệu">
                 {availableMonths.map(m => (
@@ -156,6 +186,26 @@ export default function TransactionList({ transactions, onDeleteTransaction, onE
                 ))}
               </optgroup>
             )}
+          </select>
+
+          {dateFilter === 'CUSTOM' && (
+            <div className="custom-date-range">
+              <input type="date" className="form-input" value={startDate} onChange={e => setStartDate(e.target.value)} />
+              <span>-</span>
+              <input type="date" className="form-input" value={endDate} onChange={e => setEndDate(e.target.value)} />
+            </div>
+          )}
+
+          {/* Category Filter */}
+          <select 
+            className="form-select filter-select"
+            value={categoryFilter}
+            onChange={e => setCategoryFilter(e.target.value)}
+          >
+            <option value="ALL">Tất cả danh mục</option>
+            {availableCategories.map(cat => (
+              <option key={cat} value={cat}>{cat}</option>
+            ))}
           </select>
 
           <select 
@@ -179,6 +229,10 @@ export default function TransactionList({ transactions, onDeleteTransaction, onE
             <option value="BANK">Ngân hàng</option>
             <option value="CASH">Tiền mặt</option>
           </select>
+
+          <button className="btn-secondary btn-clear-filters" onClick={handleClearFilters} title="Xóa bộ lọc">
+            Xóa Lọc
+          </button>
         </div>
       </div>
 
