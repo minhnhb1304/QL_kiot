@@ -3,6 +3,7 @@ import { Banknote, Wallet, Target, FileSpreadsheet, Calculator, Sparkles, CheckC
 import KpiCard from '../components/KpiCard';
 import CashflowChart from '../components/CashflowChart';
 import ExpensePieChart from '../components/ExpensePieChart';
+import QuickNotes from '../components/QuickNotes';
 import { createCurrencyFormatter } from '../utils/currency';
 import { exportDashboardStatsToExcel } from '../utils/excelExport';
 import { storageService } from '../services/storageService';
@@ -320,6 +321,9 @@ export default function Dashboard({
           </div>
         )}
       </div>
+
+      {/* Quick Notes Widget */}
+      <QuickNotes />
     </div>
   );
 }

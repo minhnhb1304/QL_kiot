@@ -18,6 +18,7 @@ import ErrorBoundary from './components/ErrorBoundary';
 import './styles/global.css';
 import './styles/dashboard.css';
 import './styles/mobile.css';
+import './styles/quicknotes.css';
 
 export default function App() {
   const [session, setSession] = useState(null);

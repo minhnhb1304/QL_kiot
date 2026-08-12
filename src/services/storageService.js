@@ -407,6 +407,47 @@ class StorageService {
     await db.daily_cash_records.delete(id);
     return true;
   }
+
+  // ── Quick Notes (Ghi Chú Nhanh) ──
+  async getQuickNotes() {
+    await this.init();
+    return await db.quick_notes.orderBy('created_at').reverse().toArray();
+  }
+
+  async addQuickNote({ text, color = '#10B981' }) {
+    await this.init();
+    const now = new Date().toISOString();
+    const id = await db.quick_notes.add({
+      text,
+      is_done: false,
+      color,
+      created_at: now,
+      updated_at: now
+    });
+    return { id, text, is_done: false, color, created_at: now, updated_at: now };
+  }
+
+  async toggleQuickNote(id) {
+    await this.init();
+    const note = await db.quick_notes.get(id);
+    if (!note) return null;
+    const updated = { is_done: !note.is_done, updated_at: new Date().toISOString() };
+    await db.quick_notes.update(id, updated);
+    return { ...note, ...updated };
+  }
+
+  async updateQuickNote(id, updates) {
+    await this.init();
+    const updated = { ...updates, updated_at: new Date().toISOString() };
+    await db.quick_notes.update(id, updated);
+    return { id, ...updated };
+  }
+
+  async deleteQuickNote(id) {
+    await this.init();
+    await db.quick_notes.delete(id);
+    return true;
+  }
 }
 
 export const storageService = new StorageService();
