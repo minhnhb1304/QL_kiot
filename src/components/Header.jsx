@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
   Citrus, PlusCircle, Sun, Moon, BarChart2, BookOpen,
   LogOut, UserCheck, Smartphone, Menu, X,
-  TrendingUp, Edit2, Store, Calculator
+  TrendingUp, Edit2, Store, Calculator, Settings
 } from 'lucide-react';
 
 export default function Header({
@@ -94,6 +94,13 @@ export default function Header({
             >
               <Store size={15} />
               <span>Hồ Sơ Quán</span>
+            </button>
+            <button
+              className={`nav-btn ${activeTab === 'settings' ? 'active' : ''}`}
+              onClick={() => setActiveTab('settings')}
+            >
+              <Settings size={15} />
+              <span>Cài Đặt</span>
             </button>
           </nav>
 
@@ -250,6 +257,16 @@ export default function Header({
               <Store size={18} />
             </div>
             <span>Hồ Sơ Cửa Hàng</span>
+          </button>
+
+          <button
+            className={`drawer-nav-item ${activeTab === 'settings' ? 'active' : ''}`}
+            onClick={() => navigate('settings')}
+          >
+            <div className="drawer-nav-icon">
+              <Settings size={18} />
+            </div>
+            <span>Cài Đặt</span>
           </button>
         </nav>
 

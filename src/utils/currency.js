@@ -18,3 +18,20 @@ export function createCurrencyFormatter(currency = 'VND') {
 export function formatCurrency(value, currency = 'VND') {
   return createCurrencyFormatter(currency)(value);
 }
+
+// Rút gọn số tiền cho chip nhỏ: 20000 -> "20k", 1500000 -> "1,5M"
+export function formatShortAmount(value) {
+  const amount = Number(value) || 0;
+
+  if (amount >= 1000000) {
+    const millions = amount / 1000000;
+    return `${Number.isInteger(millions) ? millions : millions.toFixed(1).replace('.', ',')}M`;
+  }
+
+  if (amount >= 1000) {
+    const thousands = amount / 1000;
+    return `${Number.isInteger(thousands) ? thousands : thousands.toFixed(1).replace('.', ',')}k`;
+  }
+
+  return String(amount);
+}

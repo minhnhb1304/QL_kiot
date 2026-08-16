@@ -2919,3 +2919,220 @@
 
 
 
+/* ─────────────────────────────────────────────
+   QUICK EXPENSE PRESETS — Modal Chips
+───────────────────────────────────────────── */
+.expense-preset-chips {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.expense-preset-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.4rem 0.7rem;
+  border-radius: var(--radius-full);
+  background-color: var(--bg-main);
+  border: 1.5px solid var(--border-color);
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  white-space: nowrap;
+  transition: all var(--transition-fast);
+}
+
+.expense-preset-chip:hover {
+  border-color: var(--accent-orange-500);
+  background-color: var(--accent-orange-50);
+  color: var(--accent-orange-600);
+}
+
+[data-theme="dark"] .expense-preset-chip:hover {
+  background-color: rgba(249, 115, 22, 0.15);
+  color: #FB923C;
+}
+
+.preset-chip-icon {
+  font-size: 0.95rem;
+  line-height: 1;
+}
+
+.preset-chip-amount {
+  font-weight: 800;
+  color: var(--expense-red-500);
+}
+
+/* ─────────────────────────────────────────────
+   SETTINGS PAGE — Quick Expense Preset Manager
+───────────────────────────────────────────── */
+.settings-page .card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.settings-page .card-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.settings-hint {
+  margin: 0 0 1rem 0;
+  font-size: 0.8rem;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
+.preset-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  border: 1px dashed var(--border-hover);
+  border-radius: var(--radius-md);
+  background-color: var(--bg-main);
+}
+
+.preset-form-row {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+}
+
+.preset-field-icon { width: 72px; flex-shrink: 0; }
+.preset-field-label { flex: 2; min-width: 0; }
+.preset-field-amount { flex: 1; min-width: 0; }
+
+.preset-icon-input {
+  text-align: center;
+  font-size: 1.1rem;
+}
+
+.preset-form-error {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--expense-red-500);
+}
+
+.preset-form-actions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+}
+
+.preset-empty {
+  padding: 1.5rem 1rem;
+  text-align: center;
+  font-size: 0.85rem;
+  line-height: 1.6;
+  color: var(--text-muted);
+  border: 1px dashed var(--border-color);
+  border-radius: var(--radius-md);
+}
+
+.preset-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.preset-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.65rem 0.85rem;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background-color: var(--bg-main);
+  transition: border-color var(--transition-fast);
+}
+
+.preset-row:hover {
+  border-color: var(--border-hover);
+}
+
+.preset-row-icon {
+  font-size: 1.35rem;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.preset-row-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.preset-row-label {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.preset-row-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.preset-row-source {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.1rem 0.45rem;
+  border-radius: var(--radius-full);
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  white-space: nowrap;
+}
+
+.preset-row-amount {
+  font-size: 0.9rem;
+  font-weight: 800;
+  color: var(--expense-red-500);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.preset-row-actions {
+  display: flex;
+  gap: 0.35rem;
+  flex-shrink: 0;
+}
+
+.preset-row-actions .icon-btn {
+  width: 32px;
+  height: 32px;
+  background-color: var(--bg-surface);
+}
+
+.preset-delete-btn:hover {
+  background-color: #FEF2F2;
+  border-color: #FECACA;
+  color: var(--expense-red-500);
+}
+
+[data-theme="dark"] .preset-delete-btn:hover {
+  background-color: rgba(239, 68, 68, 0.15);
+  border-color: rgba(239, 68, 68, 0.3);
+  color: #F87171;
+}

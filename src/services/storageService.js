@@ -448,6 +448,54 @@ class StorageService {
     await db.quick_notes.delete(id);
     return true;
   }
+
+  // ── Quick Expense Presets (Mẫu nhập nhanh chi phí thường dùng) ──
+  async getExpensePresets() {
+    await this.init();
+    const items = await db.expense_presets.toArray();
+    return items.sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
+  }
+
+  async addExpensePreset(preset) {
+    await this.init();
+    const existing = await db.expense_presets.toArray();
+    const maxOrder = existing.reduce((max, p) => Math.max(max, p.sort_order || 0), 0);
+
+    const newPreset = {
+      label: preset.label,
+      icon: preset.icon || '⚡',
+      amount: Number(preset.amount) || 0,
+      category_id: Number(preset.category_id),
+      category_name: preset.category_name,
+      payment_source: preset.payment_source || 'CASH',
+      sort_order: maxOrder + 1,
+      created_at: new Date().toISOString()
+    };
+
+    const id = await db.expense_presets.add(newPreset);
+    return { ...newPreset, id };
+  }
+
+  async updateExpensePreset(id, updates) {
+    await this.init();
+    const patch = {
+      label: updates.label,
+      icon: updates.icon || '⚡',
+      amount: Number(updates.amount) || 0,
+      category_id: Number(updates.category_id),
+      category_name: updates.category_name,
+      payment_source: updates.payment_source || 'CASH',
+      updated_at: new Date().toISOString()
+    };
+    await db.expense_presets.update(id, patch);
+    return { id, ...patch };
+  }
+
+  async deleteExpensePreset(id) {
+    await this.init();
+    await db.expense_presets.delete(id);
+    return true;
+  }
 }
 
 export const storageService = new StorageService();

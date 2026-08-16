@@ -587,3 +587,44 @@ html {
     gap: 0.3rem;
   }
 }
+
+/* ─────────────────────────────────────────────
+   QUICK EXPENSE PRESETS — Phone  (≤ 639px)
+───────────────────────────────────────────── */
+@media (max-width: 639px) {
+  .expense-preset-chip {
+    padding: 0.45rem 0.65rem;
+    font-size: 0.78rem;
+  }
+
+  /* Icon + Tên mẫu ở hàng đầu, Số tiền xuống hàng riêng */
+  .preset-form-row {
+    flex-wrap: wrap;
+  }
+
+  .preset-field-amount {
+    flex-basis: 100%;
+  }
+
+  .preset-form-row .flex-1 {
+    flex-basis: 100%;
+  }
+
+  /* Số tiền & nút thao tác xuống hàng dưới, tránh bóp chữ */
+  .preset-row {
+    flex-wrap: wrap;
+    row-gap: 0.5rem;
+  }
+
+  .preset-row-info {
+    flex-basis: calc(100% - 3.5rem);
+  }
+
+  .preset-row-amount {
+    margin-left: 2.1rem;
+  }
+
+  .preset-row-actions {
+    margin-left: auto;
+  }
+}

@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
+import { formatShortAmount } from '../utils/currency';
 
-export default function TransactionFormModal({ isOpen, onClose, onSave, categories, editingTransaction = null }) {
+export default function TransactionFormModal({ isOpen, onClose, onSave, categories, presets = [], editingTransaction = null }) {
   const [type, setType] = useState('OUT');
   const [categoryId, setCategoryId] = useState('');
   const [amount, setAmount] = useState('');
@@ -73,6 +74,19 @@ export default function TransactionFormModal({ isOpen, onClose, onSave, categori
     setAmount((current + val).toString());
   };
 
+  // Điền sẵn form từ mẫu chi nhanh (người dùng vẫn bấm Lưu để xác nhận)
+  const applyPreset = (preset) => {
+    setType('OUT');
+    setAmount(String(preset.amount));
+    setPaymentSource(preset.payment_source || 'CASH');
+    const stillExists = safeCategories.some(c => Number(c.id) === Number(preset.category_id));
+    if (stillExists) {
+      setCategoryId(preset.category_id);
+    }
+  };
+
+  const showPresets = !editingTransaction && type === 'OUT' && presets.length > 0;
+
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-content" onClick={e => e.stopPropagation()}>
@@ -108,6 +122,28 @@ export default function TransactionFormModal({ isOpen, onClose, onSave, categori
               <span>CHI (TIỀN RA)</span>
             </button>
           </div>
+
+          {/* Quick Expense Presets (Mẫu chi nhanh) */}
+          {showPresets && (
+            <div className="form-group expense-preset-group">
+              <label className="form-label">Mẫu Chi Nhanh</label>
+              <div className="expense-preset-chips">
+                {presets.map(preset => (
+                  <button
+                    key={preset.id}
+                    type="button"
+                    className="expense-preset-chip"
+                    onClick={() => applyPreset(preset)}
+                    title={`${preset.category_name} · ${preset.payment_source === 'CASH' ? 'Tiền mặt' : 'Ngân hàng'}`}
+                  >
+                    <span className="preset-chip-icon">{preset.icon}</span>
+                    <span className="preset-chip-label">{preset.label}</span>
+                    <span className="preset-chip-amount">{formatShortAmount(preset.amount)}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Amount Input */}
           <div className="form-group">

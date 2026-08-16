@@ -51,6 +51,29 @@ db.version(7).stores({
   quick_notes: '++id, text, is_done, color, created_at, updated_at'
 });
 
+db.version(8).stores({
+  categories: '++id, name, type, icon, color',
+  transactions: '++id, type, category_id, category_name, amount, payment_source, note, transaction_date, created_at',
+  users: '++id, &username, passwordHash, pin, fullName, role, phone, email, created_at',
+  store_profile: '++id, &owner_username',
+  daily_cash_records: '++id, &date, opening_cash, closing_cash, total_cash, note, created_at',
+  quick_notes: '++id, text, is_done, color, created_at, updated_at',
+  expense_presets: '++id, label, icon, amount, category_id, category_name, payment_source, sort_order, created_at'
+}).upgrade(tx => tx.table('expense_presets').bulkAdd(defaultExpensePresets()));
+
+// Mẫu chi nhanh mặc định cho quán nước ép
+function defaultExpensePresets() {
+  const nowIso = new Date().toISOString();
+  return [
+    { label: 'Đá', icon: '🧊', amount: 20000, category_id: 6, category_name: 'Đá lạnh', payment_source: 'CASH', sort_order: 1, created_at: nowIso },
+    { label: 'Ly / Ống hút', icon: '🥤', amount: 50000, category_id: 5, category_name: 'Bao bì & Vật tư (Ly, ống hút)', payment_source: 'CASH', sort_order: 2, created_at: nowIso },
+    { label: 'Cam', icon: '🍊', amount: 200000, category_id: 4, category_name: 'Trái cây / Hoa quả', payment_source: 'CASH', sort_order: 3, created_at: nowIso }
+  ];
+}
+
+// Database mới tạo lần đầu bỏ qua upgrade hook, nên phải seed preset tại đây
+db.on('populate', tx => tx.table('expense_presets').bulkAdd(defaultExpensePresets()));
+
 // Clear all transactions from database
 export async function clearTransactions() {
   await db.transactions.clear();

@@ -3,6 +3,7 @@ import Header from './components/Header';
 import Dashboard from './pages/Dashboard';
 import LedgerPage from './pages/LedgerPage';
 import StoreProfilePage from './pages/StoreProfilePage';
+import SettingsPage from './pages/SettingsPage';
 import LoginPage from './pages/LoginPage';
 import TransactionFormModal from './components/TransactionFormModal';
 import SmsAutomationModal from './components/SmsAutomationModal';
@@ -49,6 +50,7 @@ export default function App() {
   const [categories, setCategories] = useState([]);
   const [transactions, setTransactions] = useState([]);
   const [stats, setStats] = useState(null);
+  const [expensePresets, setExpensePresets] = useState([]);
 
   // Date Range filter for Dashboard ('TODAY', 'WEEK', 'MONTH', 'ALL')
   const [dateRange, setDateRange] = useState({ rangeType: 'MONTH' });
@@ -104,6 +106,10 @@ export default function App() {
     try {
       const cats = await storageService.getCategories();
       setCategories(cats);
+
+      // Load quick expense presets (Mẫu chi nhanh)
+      const presets = await storageService.getExpensePresets();
+      setExpensePresets(presets);
 
       // Load ALL transactions for LedgerPage (independent of Dashboard date range)
       const txs = await storageService.getTransactions({});
@@ -203,6 +209,34 @@ export default function App() {
     });
   };
 
+  // Quick expense presets (Mẫu chi nhanh)
+  const handleAddPreset = async (preset) => {
+    await storageService.addExpensePreset(preset);
+    await loadData();
+    showToast('Đã thêm mẫu chi nhanh', 'success');
+  };
+
+  const handleUpdatePreset = async (id, updates) => {
+    await storageService.updateExpensePreset(id, updates);
+    await loadData();
+    showToast('Đã cập nhật mẫu chi nhanh', 'success');
+  };
+
+  const handleDeletePreset = (preset) => {
+    setConfirmDialog({
+      title: 'Xóa mẫu chi nhanh',
+      message: `Bạn có chắc chắn muốn xóa mẫu "${preset.label}" không?`,
+      variant: 'danger',
+      onConfirm: async () => {
+        await storageService.deleteExpensePreset(preset.id);
+        await loadData();
+        setConfirmDialog(null);
+        showToast('Đã xóa mẫu chi nhanh', 'info');
+      },
+      onCancel: () => setConfirmDialog(null)
+    });
+  };
+
   // Reset demo data
   const handleResetData = () => {
     setConfirmDialog({
@@ -296,6 +330,16 @@ export default function App() {
             currentMonthRevenue={stats?.totalIncome || 0}
           />
         )}
+        {activeTab === 'settings' && (
+          <SettingsPage
+            presets={expensePresets}
+            categories={categories}
+            onAddPreset={handleAddPreset}
+            onUpdatePreset={handleUpdatePreset}
+            onDeletePreset={handleDeletePreset}
+            formatCurrency={formatCurrency}
+          />
+        )}
       </main>
 
       {/* Modal Quick Transaction Entry */}
@@ -307,6 +351,7 @@ export default function App() {
         }}
         onSave={handleSaveTransaction}
         categories={categories}
+        presets={expensePresets}
         editingTransaction={editingTransaction}
       />
 
