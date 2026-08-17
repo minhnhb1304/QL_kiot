@@ -1,4 +1,5 @@
 import Dexie from 'dexie';
+import { newUuid } from '../utils/uuid';
 
 export async function hashPassword(password) {
   const msgBuffer = new TextEncoder().encode(password);
@@ -61,13 +62,49 @@ db.version(8).stores({
   expense_presets: '++id, label, icon, amount, category_id, category_name, payment_source, sort_order, created_at'
 }).upgrade(tx => tx.table('expense_presets').bulkAdd(defaultExpensePresets()));
 
-// Mẫu chi nhanh mặc định cho quán nước ép
+// v9: thêm cột đồng bộ để chuẩn bị cho Cloudflare D1.
+// uuid là danh tính xuyên thiết bị — ++id tự tăng sẽ đụng nhau khi 2 máy
+// cùng ghi ngoại tuyến, nên không dùng làm khóa đồng bộ được.
+// _dirty = 1 nghĩa là dòng chưa được đẩy lên máy chủ.
+db.version(9).stores({
+  categories: '++id, name, type, icon, color',
+  transactions: '++id, &uuid, type, category_id, category_name, amount, payment_source, note, transaction_date, created_at, updated_at, deleted, _dirty',
+  users: '++id, &username, passwordHash, pin, fullName, role, phone, email, created_at',
+  store_profile: '++id, &owner_username, &uuid, updated_at, deleted, _dirty',
+  daily_cash_records: '++id, &uuid, &date, opening_cash, closing_cash, total_cash, note, created_at, updated_at, deleted, _dirty',
+  quick_notes: '++id, &uuid, text, is_done, color, created_at, updated_at, deleted, _dirty',
+  expense_presets: '++id, &uuid, label, icon, amount, category_id, category_name, payment_source, sort_order, created_at, updated_at, deleted, _dirty',
+  sync_meta: 'key'
+}).upgrade(async tx => {
+  // Gán uuid + cột đồng bộ cho mọi dòng đang có, tránh mất dữ liệu cũ.
+  // _dirty = 0: dữ liệu có trước khi bật đồng bộ, chưa coi là thay đổi cần đẩy.
+  const tables = ['transactions', 'daily_cash_records', 'quick_notes', 'expense_presets', 'store_profile'];
+  for (const name of tables) {
+    await tx.table(name).toCollection().modify(row => {
+      // store_profile chỉ có một dòng và máy chủ seed sẵn uuid 'default'.
+      // Nếu gán uuid ngẫu nhiên ở đây, lần đẩy đầu tiên sẽ tạo hồ sơ thứ hai
+      // trên máy chủ thay vì cập nhật hồ sơ đang có.
+      if (!row.uuid) row.uuid = name === 'store_profile' ? 'default' : newUuid();
+      if (row.updated_at === undefined || typeof row.updated_at === 'string') {
+        row.updated_at = Date.parse(row.updated_at || '') || Date.now();
+      }
+      if (row.deleted === undefined) row.deleted = 0;
+      if (row._dirty === undefined) row._dirty = 0;
+      if (row.server_seq === undefined) row.server_seq = 0;
+    });
+  }
+});
+
+// Mẫu chi nhanh mặc định cho quán nước ép.
+// uuid cố định trùng với seed trong schema.sql để khi đồng bộ không sinh bản trùng.
+// _dirty = 0 vì đây là seed, không phải thao tác của người dùng.
 function defaultExpensePresets() {
-  const nowIso = new Date().toISOString();
+  const now = Date.now();
+  const base = { updated_at: now, created_at: now, deleted: 0, _dirty: 0, server_seq: 0 };
   return [
-    { label: 'Đá', icon: '🧊', amount: 20000, category_id: 6, category_name: 'Đá lạnh', payment_source: 'CASH', sort_order: 1, created_at: nowIso },
-    { label: 'Ly / Ống hút', icon: '🥤', amount: 50000, category_id: 5, category_name: 'Bao bì & Vật tư (Ly, ống hút)', payment_source: 'CASH', sort_order: 2, created_at: nowIso },
-    { label: 'Cam', icon: '🍊', amount: 200000, category_id: 4, category_name: 'Trái cây / Hoa quả', payment_source: 'CASH', sort_order: 3, created_at: nowIso }
+    { uuid: 'seed-preset-ice', label: 'Đá', icon: '🧊', amount: 20000, category_id: 6, category_name: 'Đá lạnh', payment_source: 'CASH', sort_order: 1, ...base },
+    { uuid: 'seed-preset-cup', label: 'Ly / Ống hút', icon: '🥤', amount: 50000, category_id: 5, category_name: 'Bao bì & Vật tư (Ly, ống hút)', payment_source: 'CASH', sort_order: 2, ...base },
+    { uuid: 'seed-preset-orange', label: 'Cam', icon: '🍊', amount: 200000, category_id: 4, category_name: 'Trái cây / Hoa quả', payment_source: 'CASH', sort_order: 3, ...base }
   ];
 }
 
@@ -145,7 +182,14 @@ export async function seedInitialData() {
       monthlyRevenueGoal: 0,
       financialMonthStartDay: 1,
       storeNotes: '',
-      updated_at: new Date().toISOString()
+      // uuid cố định 'default': hồ sơ cửa hàng chỉ có đúng một dòng.
+      // _dirty = 0 vì đây là seed, không phải thao tác của người dùng.
+      uuid: 'default',
+      created_at: Date.now(),
+      updated_at: Date.now(),
+      deleted: 0,
+      _dirty: 0,
+      server_seq: 0
     });
   }
 }

@@ -1,4 +1,5 @@
 import { db } from './db';
+import { syncNow } from '../utils/uuid';
 
 export const storeProfileService = {
   async getProfile(ownerUsername) {
@@ -22,7 +23,13 @@ export const storeProfileService = {
       monthlyRevenueGoal: 0,
       financialMonthStartDay: 1,
       storeNotes: '',
-      updated_at: new Date().toISOString()
+      // uuid cố định 'default': hồ sơ cửa hàng chỉ có đúng một dòng
+      uuid: 'default',
+      created_at: syncNow(),
+      updated_at: syncNow(),
+      deleted: 0,
+      _dirty: 1,
+      server_seq: 0
     };
     const id = await db.store_profile.add(profile);
     return { ...profile, id };
@@ -55,7 +62,9 @@ export const storeProfileService = {
       updates.monthlyRevenueGoal = goal;
     }
 
-    updates.updated_at = new Date().toISOString();
+    updates.updated_at = syncNow();
+    updates._dirty = 1;
+    delete updates.uuid;
     await db.store_profile.update(existing.id, updates);
     return { ...existing, ...updates };
   },
@@ -65,14 +74,19 @@ export const storeProfileService = {
     if (!profile) {
       profile = await this.createProfile(ownerUsername);
     }
+    // Hồ sơ tạo trước v9 chưa có uuid — gán bổ sung để đồng bộ được
+    if (!profile.uuid) {
+      await db.store_profile.update(profile.id, { uuid: 'default' });
+      profile.uuid = 'default';
+    }
     return profile;
   },
 
   async calculateStreak() {
-    const transactions = await db.transactions
+    const transactions = (await db.transactions
       .orderBy('transaction_date')
       .reverse()
-      .toArray();
+      .toArray()).filter(t => !t.deleted);
 
     if (transactions.length === 0) return 0;
 
