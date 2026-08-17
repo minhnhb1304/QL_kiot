@@ -1,0 +1,24 @@
+# Cloudflare Pages + D1 configuration for JuiceLedger
+#
+# Lần đầu thiết lập:
+#   1. npx wrangler d1 create juice-db
+#   2. Dán database_id nhận được vào bên dưới
+#   3. npx wrangler d1 execute juice-db --remote --file=./schema.sql
+#
+# Lưu ý: Pages Functions trong ./functions CHỈ chạy trên Cloudflare Pages.
+# Deploy lên Vercel sẽ build thành công nhưng mọi /api/* trả về 404.
+
+name = "juiceledger"
+compatibility_date = "2026-08-17"
+pages_build_output_dir = "dist"
+
+[[d1_databases]]
+binding = "DB"                      # env.DB trong Pages Functions
+database_name = "juice-db"
+database_id = "REPLACE_WITH_YOUR_D1_DATABASE_ID"
+
+# Chạy D1 cục bộ khi phát triển:
+#   npx wrangler pages dev dist --d1 DB=juice-db
+#
+# Secret cho webhook SMS Banking (KHÔNG commit giá trị thật):
+#   npx wrangler pages secret put SMS_SECRET
