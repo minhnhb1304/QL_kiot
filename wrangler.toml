@@ -22,3 +22,8 @@ database_id = "REPLACE_WITH_YOUR_D1_DATABASE_ID"
 #
 # Secret cho webhook SMS Banking (KHÔNG commit giá trị thật):
 #   npx wrangler pages secret put SMS_SECRET
+#
+# Secret cho /api/sync. Chưa đặt thì endpoint để mở — đặt trước khi lên production:
+#   npx wrangler pages secret put SYNC_SECRET
+#
+# Chạy cục bộ: đặt hai giá trị trên vào file .dev.vars (đã nằm trong .gitignore).

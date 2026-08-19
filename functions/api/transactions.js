@@ -1,5 +1,12 @@
 // Cloudflare Pages Function: /api/transactions
-// Handles GET (List), POST (Create), DELETE (Remove) on Cloudflare D1 DB
+// Đọc & ghi giao dịch trên Cloudflare D1.
+//
+// Lược đồ cloud sync đổi khóa chính từ id INTEGER sang uuid TEXT, nên:
+//   - không còn ORDER BY id, thay bằng server_seq (thứ tự do máy chủ gán)
+//   - phải lọc deleted = 0 vì xóa giờ là xóa mềm (tombstone)
+//   - phản hồi trả uuid; last_row_id vô nghĩa với khóa chính kiểu TEXT
+
+import { json, bumpSeq, SEQ_EXPR } from '../../shared/d1.js';
 
 export async function onRequestGet(context) {
   const { env, request } = context;
@@ -8,7 +15,7 @@ export async function onRequestGet(context) {
   const endDate = url.searchParams.get('endDate');
 
   try {
-    let query = `SELECT * FROM transactions WHERE 1=1`;
+    let query = `SELECT * FROM transactions WHERE deleted = 0`;
     const params = [];
 
     if (startDate && endDate) {
@@ -16,14 +23,12 @@ export async function onRequestGet(context) {
       params.push(startDate, endDate);
     }
 
-    query += ` ORDER BY transaction_date DESC, id DESC LIMIT 200`;
+    query += ` ORDER BY transaction_date DESC, server_seq DESC LIMIT 200`;
 
     const { results } = await env.DB.prepare(query).bind(...params).all();
-    return new Response(JSON.stringify(results), {
-      headers: { 'Content-Type': 'application/json' }
-    });
+    return json(results);
   } catch (err) {
-    return new Response(JSON.stringify({ error: err.message }), { status: 500 });
+    return json({ error: err.message }, 500);
   }
 }
 
@@ -33,19 +38,47 @@ export async function onRequestPost(context) {
     const data = await request.json();
     const { type, category_id, category_name, amount, payment_source, note, transaction_date } = data;
 
-    const query = `
-      INSERT INTO transactions (type, category_id, category_name, amount, payment_source, note, transaction_date)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
-    `;
+    // uuid do client sinh nếu có (giữ nguyên danh tính khi đồng bộ về sau),
+    // ngược lại máy chủ tự sinh. crypto.randomUUID() có sẵn trong Workers.
+    const uuid = data.uuid || crypto.randomUUID();
+    const now = Date.now();
 
-    const info = await env.DB.prepare(query).bind(
-      type, category_id, category_name, amount, payment_source, note, transaction_date
-    ).run();
+    const insert = env.DB.prepare(`
+      INSERT INTO transactions (
+        uuid, type, category_id, category_name, amount, payment_source,
+        note, transaction_date, created_at, updated_at, deleted, server_seq
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ${SEQ_EXPR})
+    `).bind(uuid, type, category_id, category_name, amount, payment_source, note, transaction_date, now, now);
 
-    return new Response(JSON.stringify({ success: true, id: info.meta.last_row_id }), {
-      headers: { 'Content-Type': 'application/json' }
-    });
+    await env.DB.batch([bumpSeq(env), insert]);
+
+    return json({ success: true, uuid });
   } catch (err) {
-    return new Response(JSON.stringify({ error: err.message }), { status: 500 });
+    return json({ error: err.message }, 500);
+  }
+}
+
+// Xóa mềm: đặt tombstone thay vì DELETE, để lệnh xóa lan được sang thiết bị khác.
+export async function onRequestDelete(context) {
+  const { env, request } = context;
+  try {
+    const url = new URL(request.url);
+    const uuid = url.searchParams.get('uuid');
+    if (!uuid) return json({ error: 'Thiếu tham số uuid' }, 400);
+
+    const update = env.DB.prepare(`
+      UPDATE transactions
+         SET deleted = 1, updated_at = ?, server_seq = ${SEQ_EXPR}
+       WHERE uuid = ?
+    `).bind(Date.now(), uuid);
+
+    const [, result] = await env.DB.batch([bumpSeq(env), update]);
+
+    if ((result.meta?.changes ?? 0) === 0) {
+      return json({ error: 'Không tìm thấy giao dịch' }, 404);
+    }
+    return json({ success: true, uuid });
+  } catch (err) {
+    return json({ error: err.message }, 500);
   }
 }

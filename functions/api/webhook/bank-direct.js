@@ -1,6 +1,8 @@
 // Cloudflare Pages Function: /api/webhook/bank-direct
 // API Tiếp nhận Webhook kết nối TRỰC TIẾP từ Ngân Hàng (MB Bank / VietinBank / BIDV Open API)
 
+import { json, sha256Hex, insertIncome } from '../../../shared/d1.js';
+
 export async function onRequestPost(context) {
   const { env, request } = context;
 
@@ -10,7 +12,7 @@ export async function onRequestPost(context) {
 
     // 1. Giải mã Payload từ Ngân Hàng
     const payload = JSON.parse(rawBody);
-    
+
     // Cấu trúc dữ liệu chuẩn Open API Ngân hàng Việt Nam:
     // payload: { amount: 35000, creditDebit: "CR", description: "Mã VietQR 001", transactionDate: "2026-07-27" }
     const amount = Number(payload.amount || payload.transferAmount || 0);
@@ -19,32 +21,39 @@ export async function onRequestPost(context) {
     const dateStr = new Date().toISOString().split('T')[0];
 
     if (!isCredit || amount <= 0) {
-      return new Response(JSON.stringify({ responseCode: '01', message: 'Ignored non-credit transaction' }), { status: 200 });
+      return json({ responseCode: '01', message: 'Ignored non-credit transaction' });
     }
 
+    // Cổng ngân hàng gửi lại cho tới khi nhận responseCode '00'. Mã giao dịch
+    // của ngân hàng là khóa chống trùng tin cậy nhất; băm payload nếu thiếu.
+    const bankRef = payload.transactionId || payload.referenceNumber || payload.traceId || payload.ftNumber;
+    const idempotencyKey = bankRef
+      ? `bank-direct:${bankRef}`
+      : `bank-direct:${dateStr}:${amount}:${(await sha256Hex(rawBody)).slice(0, 32)}`;
+
     // 2. Ghi khoản THU (IN) nguồn Ngân Hàng vào Cloudflare D1 Database
-    const query = `
-      INSERT INTO transactions (type, category_id, category_name, amount, payment_source, note, transaction_date)
-      VALUES ('IN', 1, 'Doanh thu nước ép', ?, 'BANK', ?, ?)
-    `;
+    const { uuid, duplicate } = await insertIncome({
+      env,
+      amount,
+      note: `[Bank Direct API] ${note}`,
+      dateStr,
+      idempotencyKey
+    });
 
-    const info = await env.DB.prepare(query).bind(
-      amount, 
-      `[Bank Direct API] ${note}`, 
-      dateStr
-    ).run();
-
-    // 3. Phản hồi chuẩn ISO 20022 cho cổng API Ngân hàng
-    return new Response(JSON.stringify({ 
-      responseCode: '00', 
+    // 3. Phản hồi chuẩn ISO 20022 cho cổng API Ngân hàng.
+    //    Bản ghi trùng vẫn trả '00': với cổng ngân hàng, "đã nhận rồi" là thành
+    //    công — trả mã lỗi chỉ khiến nó gửi lại mãi.
+    return json({
+      responseCode: '00',
       success: true,
-      transactionId: info.meta.last_row_id,
-      message: 'Successfully recorded incoming bank transfer' 
-    }), {
-      headers: { 'Content-Type': 'application/json' }
+      duplicate,
+      transactionId: uuid,
+      message: duplicate
+        ? 'Transaction already recorded, ignored'
+        : 'Successfully recorded incoming bank transfer'
     });
 
   } catch (err) {
-    return new Response(JSON.stringify({ responseCode: '99', error: err.message }), { status: 500 });
+    return json({ responseCode: '99', error: err.message }, 500);
   }
 }

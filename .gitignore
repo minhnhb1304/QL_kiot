@@ -28,3 +28,7 @@ DATABASE.md
 
 # Spec documents
 specs/
+
+# Secret cục bộ của wrangler (SMS_SECRET, SYNC_SECRET…) và state D1 chạy máy
+.dev.vars
+.wrangler/
