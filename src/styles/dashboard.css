@@ -354,22 +354,33 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  /* CO ĐƯỢC, không phải flex-shrink: 0.
-     Trước đây cả .header-left lẫn .header-actions đều khoá không cho co, mà
-     tên quán thì nowrap không cắt chữ — nên hàng header không có cách nào thu
-     lại: thêm một nút hay đặt tên quán dài là cả trang rộng hơn màn hình, kéo
-     ngang được. Nhường chỗ ở phía thương hiệu là rẻ nhất, vì các nút bên phải
-     đều là thao tác bấm được. */
+  /* Nhường chỗ ở phía thương hiệu là rẻ nhất: chữ cắt được, còn các nút bên
+     phải đều là thao tác bấm.
+
+     min-width phải là một SỐ PIXEL cụ thể, không phải 0 và cũng không phải
+     auto:
+       auto → tính theo nội dung, mà tên quán để nowrap nên nội dung tối thiểu
+              chính là cả cái tên; khối không co được chút nào và trang tràn.
+       0    → khối co xuống dưới cả hamburger lẫn ô logo, hai thứ không co
+              được, và chúng lòi ra đè lên hàng nút.
+     5.75rem = hamburger 36px + khoảng cách 8px + ô logo 38px + dư một chút.
+     Vẫn thấp hơn nhiều so với kích thước nội dung, nên phần chữ vẫn co và cắt
+     bình thường. */
   flex-shrink: 1;
-  min-width: 0;
+  min-width: 5.75rem;
 }
 
 .hamburger-btn {
   flex-shrink: 0;
 }
 
-/* Desktop: hide hamburger, show inline nav */
-@media (min-width: 1024px) {
+/* Desktop: hide hamburger, show inline nav.
+   Ngưỡng 1280px chứ không phải 1024px. Container header tối đa 1200px, trừ lề
+   còn 1136px lòng. Đo thực tế: thanh nav cần ~350px, hàng nút ~560px, thương
+   hiệu ~200px — cộng lại 1126px. Ở 1024px lòng container chỉ có 954px, tức
+   thiếu 172px, và KHÔNG cách sắp xếp flex nào cứu được: thứ gì đó buộc phải
+   nhường. Dưới 1280px thì drawer đã làm đúng việc điều hướng rồi. */
+@media (min-width: 1280px) {
   .hamburger-btn {
     display: none !important;
   }
@@ -381,8 +392,8 @@
   }
 }
 
-/* Mobile & Tablet (< 1024px): use hamburger drawer nav */
-@media (max-width: 1023px) {
+/* Mobile & Tablet (< 1280px): use hamburger drawer nav */
+@media (max-width: 1279px) {
   .desktop-nav {
     display: none !important;
   }
@@ -412,19 +423,26 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 0.75rem;
+  /* 0.5rem chứ không phải 0.75rem: hàng header sát nút chỗ, và hai khoảng cách
+     này là 8px lấy lại được mà không phải bỏ đi thứ gì. Đủ để tên quán mặc định
+     hiện trọn thay vì thiếu 2px rồi hiện dấu "…". */
+  gap: 0.5rem;
 }
 
 .header-brand {
   display: flex;
   align-items: center;
   gap: 0.6rem;
-  flex-shrink: 0;
+  /* Sàn bằng đúng ô logo cộng chút dư, cùng lý do như .header-left. */
+  flex-shrink: 1;
+  min-width: 2.75rem;
 }
 
 .brand-icon {
   width: 38px;
   height: 38px;
+  /* Ô vuông logo giữ nguyên; chỉ phần chữ bên cạnh mới cắt bớt */
+  flex-shrink: 0;
   border-radius: var(--radius-md);
   background: linear-gradient(135deg, var(--primary-500), var(--accent-orange-500));
   display: flex;
@@ -435,7 +453,10 @@
 }
 
 .brand-text {
-  min-width: 0;   /* thiếu dòng này thì con bên trong không ellipsis được */
+  /* ĐÂY là chỗ duy nhất đặt min-width: 0 trong chuỗi thương hiệu. Nó cho phép
+     riêng phần chữ co xuống 0 và bật ellipsis, trong khi hamburger và logo giữ
+     nguyên kích thước. */
+  min-width: 0;
 }
 
 .brand-text h1 {
@@ -457,7 +478,10 @@
   padding: 0.2rem;
   border-radius: var(--radius-md);
   border: 1px solid var(--border-color);
-  flex-shrink: 0;
+  /* Co được, nhưng KHÔNG đặt min-width: 0 — để mặc định min-width: auto thì
+     khối dừng đúng ở kích thước nội dung thay vì sụp xuống 0 và để các tab
+     tràn ra ngoài. */
+  flex-shrink: 1;
 }
 
 .nav-btn {
@@ -491,8 +515,8 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  /* Giữ nguyên kích thước: đây toàn là nút bấm, co lại thì khó chạm trúng.
-     Phần phải nhường chỗ là .header-left ở trên. */
+  /* Không co: toàn nút bấm, hẹp lại là khó chạm trúng. Thứ nhường chỗ khi chật
+     là tên quán ở .header-left và tên người dùng trong .user-profile-badge. */
   flex-shrink: 0;
 }
 
@@ -548,7 +572,17 @@
   font-size: 0.8rem;
   font-weight: 600;
   white-space: nowrap;
+  /* Chặn bề ngang. Đo được ô này ngốn 203px khi hiện nguyên "Nguyễn Văn Chủ
+     Quán" — nhiều hơn cả thương hiệu của quán, trong một hàng vốn đã không đủ
+     chỗ. Tên dài thì cắt; bấm vào vẫn mở được hồ sơ đầy đủ. */
   flex-shrink: 0;
+  max-width: 9rem;
+  overflow: hidden;
+}
+
+.user-profile-badge > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 @media (min-width: 900px) {
@@ -3206,11 +3240,44 @@
   display: none;
 }
 
-/* Chữ chỉ hiện trên màn rộng, giống .btn-sms-text — trên điện thoại chỉ còn
-   biểu tượng để không đẩy nút "Ghi Thu / Chi" ra khỏi hàng. */
+/* Chữ chỉ hiện khi hàng header còn chỗ.
+   Từ 1024px thanh điều hướng giữa (.header-nav, ~364px) xuất hiện, và tổng ba
+   khối vượt quá 1200px của container: hậu quả là tên quán bị cắt cụt còn ô hồ
+   sơ người dùng teo xuống 23px. Nhãn này tốn 80px và là thứ ít thiết yếu nhất
+   trong hàng — biểu tượng cộng màu sắc cộng tooltip đã nói đủ ý. Nhường chỗ
+   cho tên quán ở đúng dải bề rộng chật. */
 @media (min-width: 768px) {
   .sync-status-text {
     display: inline;
+  }
+}
+
+/* Từ 1280px thanh nav giữa xuất hiện và ăn ~350px. Container header bị chặn ở
+   1200px nên rộng thêm cũng không có thêm chỗ — nhãn này phải nhường vĩnh viễn
+   ở dải đó, không phải chỉ trong một khoảng. Biểu tượng, màu sắc và tooltip vẫn
+   nói đủ ý. */
+@media (min-width: 1280px) {
+  .sync-status-text,
+  .btn-sms-text,
+  .btn-cash-text {
+    display: none;
+  }
+
+  /* Tên người dùng cũng nhường chỗ, chỉ còn biểu tượng.
+     Đo thực tế ở 1280px: nav 481px + hàng nút 535px + thương hiệu 202px =
+     1234px, mà lòng container chỉ 1136px. Container bị chặn ở 1200px nên màn
+     hình rộng hơn cũng không có thêm chỗ — phải bớt thật. Giữa tên quán và tên
+     người đang đăng nhập thì tên quán quan trọng hơn; ô này vẫn bấm được để mở
+     hồ sơ, và vẫn có tooltip. */
+  .user-profile-badge > span {
+    display: none;
+  }
+
+  /* Bốn tab điều hướng chiếm 481px. Thu padding lại lấy thêm ~19px mà chữ vẫn
+     nguyên vẹn. */
+  .nav-btn {
+    padding-left: 0.7rem;
+    padding-right: 0.7rem;
   }
 }
 
