@@ -16,6 +16,7 @@
 // đồng bộ ở client — máy chủ chỉ nói một thứ tiếng.
 
 import { json, bumpSeq, SEQ_EXPR } from '../../shared/d1.js';
+import { authorizeDataRequest } from '../../shared/auth.js';
 
 // Số dòng tối đa nhận trong một lượt đẩy. Mỗi dòng tốn 2 câu lệnh trong batch,
 // nên đây cũng là cái hãm cho kích thước transaction của D1.
@@ -125,14 +126,12 @@ export async function onRequestPost(context) {
     return json({ error: 'Body không phải JSON hợp lệ' }, 400);
   }
 
-  // Cùng kiểu bảo vệ tùy chọn như webhook SMS: chưa có secret thì endpoint mở.
-  // Xác thực theo phiên đăng nhập (bảng users/sessions trong schema.sql) là
-  // việc riêng — hiện đăng nhập của app hoàn toàn nằm ở client.
-  if (env.SYNC_SECRET) {
-    const provided = request.headers.get('x-sync-secret') || body.secret;
-    if (provided !== env.SYNC_SECRET) {
-      return json({ error: 'Unauthorized sync client' }, 401);
-    }
+  // Hai đường vào: phiên đăng nhập (app trong trình duyệt) hoặc x-sync-secret
+  // (máy-với-máy). Xem chú thích authorizeDataRequest — client là JavaScript
+  // công khai nên secret dùng chung không bảo vệ được gì cho đường thứ nhất.
+  const auth = await authorizeDataRequest(env, request, body.secret);
+  if (!auth.ok) {
+    return json({ error: 'Unauthorized sync client', code: 'unauthorized' }, 401);
   }
 
   // Con trỏ khởi đầu là -1, KHÔNG phải 0.

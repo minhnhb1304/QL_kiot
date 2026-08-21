@@ -19,6 +19,18 @@
 const BASE = process.env.BASE_URL || 'http://127.0.0.1:8788';
 let failures = 0;
 
+// /api/sync và /api/transactions giờ nằm sau cổng xác thực (shared/auth.js).
+// Bọc fetch đúng một lần thay vì sửa từng lời gọi: sửa tay thì chỉ cần bỏ sót
+// một chỗ là cả bài test đỏ vì 401 chứ không phải vì lỗi thật.
+//
+// rawFetch giữ lại để gọi KHÔNG kèm xác thực — chính là thứ mục 0 cần kiểm.
+const rawFetch = globalThis.fetch;
+let authHeader = {};
+globalThis.fetch = (url, init = {}) =>
+  rawFetch(url, String(url).startsWith(BASE)
+    ? { ...init, headers: { ...authHeader, ...(init.headers || {}) } }
+    : init);
+
 const post = (path, body, headers = {}) =>
   fetch(BASE + path, {
     method: 'POST',
@@ -33,6 +45,71 @@ function check(name, cond, detail) {
 
 const uuid = () => crypto.randomUUID();
 const now = () => Date.now();
+
+console.log('\n=== 0. Xác thực: đăng ký, đăng nhập, khoá endpoint ===');
+{
+  const rawPost = (path, body, headers = {}) =>
+    rawFetch(BASE + path, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...headers },
+      body: JSON.stringify(body)
+    }).then(async r => ({ status: r.status, body: await r.json().catch(() => null) }));
+
+  // Chưa có tài khoản nào → người cài app đầu tiên nhận quán và thành OWNER.
+  const owner = { username: 'chuquan_test', fullName: 'Chủ Quán Test', password: 'matkhau123' };
+  const reg = await rawPost('/api/auth/register', { ...owner, confirmPassword: owner.password });
+  const alreadySetUp = reg.status === 409 || reg.body?.code === 'registration_closed';
+
+  if (alreadySetUp) {
+    console.log('  SKIP  đã có tài khoản từ lần chạy trước — chỉ kiểm đăng nhập');
+  } else {
+    check('đăng ký chủ quán đầu tiên thành công', reg.status === 200 && !!reg.body.token, reg);
+    check('người đầu tiên luôn là OWNER', reg.body?.user?.role === 'OWNER', reg.body?.user);
+    check('máy chủ không trả về bất kỳ cột mật khẩu nào',
+      !!reg.body?.user && !('password_hash' in reg.body.user) && !('password_salt' in reg.body.user),
+      Object.keys(reg.body?.user || {}));
+  }
+
+  // Từ người thứ hai trở đi phải có phiên OWNER. Không token → 403.
+  const stranger = await rawPost('/api/auth/register', {
+    username: 'nguoila', fullName: 'Người Lạ', password: 'matkhau123', confirmPassword: 'matkhau123'
+  });
+  check('người lạ không tự đăng ký được', stranger.status === 403, stranger);
+
+  const wrong = await rawPost('/api/auth/login', { username: owner.username, password: 'sai-be-bet' });
+  check('sai mật khẩu bị từ chối', wrong.status === 401 && wrong.body.code === 'invalid_credentials', wrong);
+
+  const unknown = await rawPost('/api/auth/login', { username: 'khong-ton-tai', password: 'matkhau123' });
+  check('tài khoản không tồn tại phân biệt được với sai mật khẩu',
+    unknown.status === 401 && unknown.body.code === 'user_not_found', unknown);
+
+  const login = await rawPost('/api/auth/login', { username: owner.username, password: owner.password });
+  check('đăng nhập đúng mật khẩu thành công', login.status === 200 && !!login.body.token, login);
+
+  const token = login.body?.token;
+
+  // Giờ đã có tài khoản → cửa phải đóng với mọi lời gọi không xác thực.
+  const bare = await rawPost('/api/sync', { since: -1, changes: {} });
+  check('/api/sync từ chối lời gọi không xác thực', bare.status === 401, bare);
+
+  const bareGet = await rawFetch(BASE + '/api/transactions');
+  check('/api/transactions từ chối lời gọi không xác thực', bareGet.status === 401, bareGet.status);
+
+  const withToken = await rawPost('/api/sync', { since: -1, changes: {} }, { Authorization: `Bearer ${token}` });
+  check('/api/sync chấp nhận phiên đăng nhập', withToken.status === 200, withToken.status);
+
+  const me = await rawFetch(BASE + '/api/auth/me', { headers: { Authorization: `Bearer ${token}` } });
+  check('/api/auth/me xác nhận phiên còn sống', me.status === 200, me.status);
+
+  const meBad = await rawFetch(BASE + '/api/auth/me', { headers: { Authorization: 'Bearer khong-phai-token' } });
+  check('token bịa bị từ chối', meBad.status === 401, meBad.status);
+
+  // Các mục sau dùng x-sync-secret nếu có (đường máy-với-máy), ngược lại dùng
+  // chính phiên vừa đăng nhập.
+  authHeader = process.env.SYNC_SECRET
+    ? { 'x-sync-secret': process.env.SYNC_SECRET }
+    : { Authorization: `Bearer ${token}` };
+}
 
 console.log('\n=== 1. GET /api/transactions (lược đồ uuid) ===');
 {

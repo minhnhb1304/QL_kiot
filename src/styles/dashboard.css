@@ -3136,3 +3136,73 @@
   border-color: rgba(239, 68, 68, 0.3);
   color: #F87171;
 }
+
+/* ── Chỉ báo trạng thái đồng bộ (SyncStatus.jsx) ──────────────────────────
+   Nằm cạnh các nút hành động trong header. Giữ đúng kích thước và bo góc của
+   .btn-sms-action bên cạnh để hàng nút không bị gãy nhịp. */
+.sync-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.38rem 0.65rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  font-family: inherit;
+  border-radius: var(--radius-full);
+  border: 1px solid transparent;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.sync-status-text {
+  display: none;
+}
+
+/* Chữ chỉ hiện trên màn rộng, giống .btn-sms-text — trên điện thoại chỉ còn
+   biểu tượng để không đẩy nút "Ghi Thu / Chi" ra khỏi hàng. */
+@media (min-width: 768px) {
+  .sync-status-text {
+    display: inline;
+  }
+}
+
+.sync-status.is-idle {
+  color: var(--primary-600);
+  background: color-mix(in srgb, var(--primary-600) 10%, transparent);
+}
+
+.sync-status.is-syncing {
+  color: var(--primary-600);
+  background: color-mix(in srgb, var(--primary-600) 10%, transparent);
+}
+
+.sync-status.is-syncing svg {
+  animation: sync-spin 1s linear infinite;
+}
+
+.sync-status.is-offline {
+  color: #92400e;
+  background: color-mix(in srgb, #f59e0b 18%, transparent);
+}
+
+.sync-status.is-error {
+  color: #b91c1c;
+  background: color-mix(in srgb, #ef4444 15%, transparent);
+}
+
+.sync-status:hover {
+  border-color: currentColor;
+}
+
+@keyframes sync-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Người bật "giảm chuyển động" trong hệ điều hành không nên bị một biểu tượng
+   quay liên tục ở góc màn hình. */
+@media (prefers-reduced-motion: reduce) {
+  .sync-status.is-syncing svg {
+    animation: none;
+  }
+}

@@ -12,6 +12,7 @@ import DailyCashModal from './components/DailyCashModal';
 import { storageService } from './services/storageService';
 import { authService } from './services/authService';
 import { storeProfileService } from './services/storeProfileService';
+import { syncService } from './services/syncService';
 import { createCurrencyFormatter } from './utils/currency';
 import ConfirmDialog from './components/ConfirmDialog';
 import Toast from './components/Toast';
@@ -41,6 +42,7 @@ export default function App() {
   const [isDailyCashModalOpen, setIsDailyCashModalOpen] = useState(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [storeProfile, setStoreProfile] = useState(null);
+  const [syncState, setSyncState] = useState('idle');
 
   const [toast, setToast] = useState(null);
   const [confirmDialog, setConfirmDialog] = useState(null);
@@ -61,11 +63,19 @@ export default function App() {
     [storeProfile?.currency]
   );
 
-  // Auto-login on mount if saved session exists
+  // Auto-login on mount if saved session exists.
+  // Hiện phiên đã lưu ngay lập tức rồi mới hỏi máy chủ xem nó còn sống không —
+  // chờ mạng trước khi vẽ gì cả sẽ biến mọi lần mở app thành một màn hình trắng.
   useEffect(() => {
     const existingSession = authService.getSession();
     if (existingSession) {
       setSession(existingSession);
+      authService.validateSession().then(valid => {
+        if (!valid) {
+          authService.logout();
+          setSession(null);
+        }
+      });
     }
   }, []);
 
@@ -155,6 +165,11 @@ export default function App() {
     } catch (err) {
       console.error('Lỗi load dữ liệu:', err);
     }
+
+    // Mọi thao tác ghi đều kết thúc bằng loadData(), nên đây là chỗ duy nhất
+    // đảm bảo không bỏ sót thay đổi nào cần đẩy lên. Hàm có debounce và có khoá
+    // chống chạy chồng, gọi thừa chỉ tốn một POST rỗng.
+    syncService.scheduleSync();
   }, [dateRange, storeProfile?.financialMonthStartDay]);
 
   useEffect(() => {
@@ -162,6 +177,31 @@ export default function App() {
       loadData();
     }
   }, [session, loadData]);
+
+  // Bật vòng đồng bộ khi đã đăng nhập, tắt khi đăng xuất.
+  useEffect(() => {
+    if (!session) return undefined;
+    syncService.startAutoSync();
+    return () => syncService.stopAutoSync();
+  }, [session]);
+
+  // Đồng bộ kéo về được dữ liệu mới → vẽ lại. Phiên hỏng → về màn đăng nhập.
+  useEffect(() => {
+    return syncService.onSyncChange(event => {
+      if (event.type === 'status') {
+        setSyncState(event.state);
+      } else if (event.type === 'changed') {
+        loadData();
+        storeProfileService.getProfile().then(p => { if (p) setStoreProfile(p); });
+      } else if (event.type === 'unauthorized') {
+        authService.logout();
+        setSession(null);
+        showToast('Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại', 'error');
+      } else if (event.type === 'error') {
+        console.warn('Đồng bộ lỗi:', event.message);
+      }
+    });
+  }, [loadData]);
 
   // Handle adding or updating transaction
   const handleSaveTransaction = async (formData) => {
@@ -255,6 +295,7 @@ export default function App() {
   };
 
   const handleLogout = () => {
+    syncService.stopAutoSync();
     authService.logout();
     setSession(null);
   };
@@ -287,6 +328,8 @@ export default function App() {
         toggleTheme={toggleTheme}
         onResetData={handleResetData}
         currentUser={session?.user}
+        syncState={syncState}
+        onSyncNow={() => syncService.runSync({ silent: false })}
         onLogout={handleLogout}
         onEditProfile={() => setIsProfileModalOpen(true)}
         storeProfile={storeProfile}

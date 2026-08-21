@@ -1,9 +1,49 @@
-import { db, seedInitialData, hashPassword } from './db';
+import { db, seedInitialData, hashPassword } from './db.js';
+import {
+  apiFetch, ApiError, readStoredSession, writeStoredSession, clearStoredSession, getToken
+} from './apiClient.js';
 
-const SESSION_KEY = 'jl_auth_session';
+// Xác thực giờ nằm ở máy chủ (D1: bảng users + sessions). Dexie chỉ còn giữ một
+// bản sao của người dùng để đăng nhập được khi mất mạng.
+//
+// Bề mặt hàm giữ nguyên hệt bản cũ — App.jsx và LoginPage.jsx không phải sửa gì:
+//   getSession()      vẫn đồng bộ, vẫn đọc localStorage
+//   loginWithPassword / registerUser  vẫn trả { user, token }
+//   logout()          vẫn đồng bộ
+//   updateUserProfile vẫn trả session đã cập nhật
+
+// Giữ bản sao cục bộ của tài khoản để lần sau mất mạng vẫn đăng nhập được.
+// passwordHash là SHA-256 như lược đồ Dexie xưa nay — đây chỉ là chốt chặn
+// ngoại tuyến, còn nguồn sự thật là PBKDF2 trên máy chủ.
+async function mirrorUserLocally(user, password) {
+  try {
+    const passwordHash = await hashPassword(password);
+    const existing = await db.users.where('username').equalsIgnoreCase(user.username).first();
+    const row = {
+      username: user.username,
+      passwordHash,
+      fullName: user.fullName,
+      role: user.role,
+      phone: user.phone || '',
+      email: user.email || '',
+      created_at: existing?.created_at || new Date().toISOString()
+    };
+    if (existing) {
+      await db.users.update(existing.id, row);
+    } else {
+      await db.users.add(row);
+    }
+  } catch (err) {
+    console.warn('Không lưu được bản sao tài khoản cục bộ:', err);
+  }
+}
+
+function persist(session, rememberMe = true) {
+  if (rememberMe) writeStoredSession(session);
+  return session;
+}
 
 export const authService = {
-  // Ensure DB is initialized before auth actions
   async init() {
     try {
       await seedInitialData();
@@ -12,19 +52,30 @@ export const authService = {
     }
   },
 
-  // Check if active valid session exists
   getSession() {
+    return readStoredSession();
+  },
+
+  getToken,
+
+  // Phiên còn sống không? Dùng để phát hiện token hết hạn sau nhiều ngày không mở app.
+  // Mất mạng trả về true: không có bằng chứng phiên hỏng thì đừng đá người dùng ra.
+  async validateSession() {
+    if (!getToken()) return false;
     try {
-      const saved = localStorage.getItem(SESSION_KEY);
-      if (!saved) return null;
-      const session = JSON.parse(saved);
-      return session;
-    } catch {
-      return null;
+      const { user } = await apiFetch('/api/auth/me');
+      const session = readStoredSession();
+      if (session) persist({ ...session, user });
+      return true;
+    } catch (err) {
+      if (err instanceof ApiError && err.kind === 'unauthorized') {
+        clearStoredSession();
+        return false;
+      }
+      return true;
     }
   },
 
-  // Get all registered users for account selection in login UI
   async getUsers() {
     await this.init();
     try {
@@ -41,166 +92,167 @@ export const authService = {
     }
   },
 
-  // Register a new user account
   async registerUser({ username, fullName, password, confirmPassword, role = 'OWNER', phone = '', email = '' }) {
     await this.init();
 
-    // 1. Validation checks
-    const cleanUsername = (username || '').trim().toLowerCase();
-    const cleanFullName = (fullName || '').trim();
-    const cleanPhone = (phone || '').trim();
-    const cleanEmail = (email || '').trim();
+    // Kiểm tra tại chỗ để báo lỗi ngay mà không tốn một vòng mạng. Máy chủ vẫn
+    // kiểm tra lại đúng những luật này — đây chỉ là cho nhanh, không phải cho chắc.
+    if (password !== confirmPassword) throw new Error('Mật khẩu xác nhận không trùng khớp');
 
-    if (!cleanUsername) {
-      throw new Error('Vui lòng nhập tên đăng nhập');
-    }
+    const { token, user } = await apiFetch('/api/auth/register', {
+      method: 'POST',
+      body: { username, fullName, password, confirmPassword, role, phone, email }
+    });
 
-    if (cleanUsername.length < 3) {
-      throw new Error('Tên đăng nhập phải có ít nhất 3 ký tự');
-    }
-
-    if (!/^[a-zA-Z0-9_]+$/.test(cleanUsername)) {
-      throw new Error('Tên đăng nhập chỉ chứa chữ cái, chữ số và dấu gạch dưới (_)');
-    }
-
-    if (!cleanFullName) {
-      throw new Error('Vui lòng nhập họ và tên');
-    }
-
-    if (cleanFullName.length < 2) {
-      throw new Error('Họ và tên quá ngắn');
-    }
-
-    if (!password || password.length < 6) {
-      throw new Error('Mật khẩu phải chứa ít nhất 6 ký tự');
-    }
-
-    if (password !== confirmPassword) {
-      throw new Error('Mật khẩu xác nhận không trùng khớp');
-    }
-
-    if (cleanPhone && !/^[0-9]{9,11}$/.test(cleanPhone)) {
-      throw new Error('Số điện thoại không hợp lệ (gồm 9 - 11 chữ số)');
-    }
-
-    // 2. Check if username already exists in DB
-    const existingUser = await db.users.where('username').equalsIgnoreCase(cleanUsername).first();
-    if (existingUser) {
-      throw new Error(`Tên đăng nhập "${cleanUsername}" đã được sử dụng`);
-    }
-
-    // 3. Create user object
-    const newUser = {
-      username: cleanUsername,
-      fullName: cleanFullName,
-      passwordHash: await hashPassword(password),
-      role: role || 'OWNER',
-      phone: cleanPhone,
-      email: cleanEmail,
-      created_at: new Date().toISOString()
-    };
-
-    // 4. Save to IndexedDB
-    await db.users.add(newUser);
-
-    // 5. Create session object
-    const session = {
-      user: {
-        username: newUser.username,
-        fullName: newUser.fullName,
-        role: newUser.role,
-        phone: newUser.phone,
-        email: newUser.email
-      },
-      token: 'token_' + Date.now()
-    };
-
-    // Save session automatically
-    localStorage.setItem(SESSION_KEY, JSON.stringify(session));
-
-    return session;
+    await mirrorUserLocally(user, password);
+    return persist({ user, token });
   },
 
-  // Log in with Username / Password
   async loginWithPassword(username, password, rememberMe = true) {
     await this.init();
-
     const cleanUsername = (username || '').trim().toLowerCase();
 
-    // Search in IndexedDB users table first
-    const dbUser = await db.users.where('username').equalsIgnoreCase(cleanUsername).first();
-    if (dbUser) {
-      const inputHash = await hashPassword(password);
-      if (dbUser.passwordHash === inputHash) {
-        const session = {
-          user: {
-            username: dbUser.username,
-            fullName: dbUser.fullName,
-            role: dbUser.role,
-            phone: dbUser.phone || '',
-            email: dbUser.email || ''
-          },
-          token: 'token_' + Date.now()
-        };
-        if (rememberMe) {
-          localStorage.setItem(SESSION_KEY, JSON.stringify(session));
-        }
-        return session;
-      }
-    }
+    try {
+      const { token, user } = await apiFetch('/api/auth/login', {
+        method: 'POST',
+        auth: false,
+        body: { username: cleanUsername, password }
+      });
+      await mirrorUserLocally(user, password);
+      return persist({ user, token }, rememberMe);
 
-    throw new Error('Tài khoản hoặc mật khẩu không chính xác');
+    } catch (err) {
+      if (!(err instanceof ApiError)) throw err;
+
+      // Mất mạng: quán vẫn phải ghi sổ được. Xác minh bằng bản sao cục bộ và
+      // đánh dấu phiên là ngoại tuyến để syncService biết chưa có token thật.
+      if (err.kind === 'offline') {
+        const session = await this.loginOffline(cleanUsername, password);
+        if (session) return persist(session, rememberMe);
+        throw new Error('Không kết nối được máy chủ và máy này chưa từng đăng nhập tài khoản đó');
+      }
+
+      // Máy chủ chưa biết tài khoản này, nhưng máy này thì có. Đây là các tài
+      // khoản có từ trước khi có đăng nhập máy chủ (admin/quan/nhanvien và tài
+      // khoản chủ quán tự đăng ký hồi còn cục bộ). Chuyển nó lên máy chủ bằng
+      // chính mật khẩu vừa gõ — người dùng không thấy bước nào khác thường.
+      if (err.code === 'user_not_found') {
+        const migrated = await this.migrateLocalAccount(cleanUsername, password);
+        if (migrated) return persist(migrated, rememberMe);
+      }
+
+      throw new Error(err.message);
+    }
   },
 
-  // Update user profile (fullName, phone, email)
+  // Xác minh bằng Dexie. Chỉ dùng khi không gọi được máy chủ.
+  async loginOffline(username, password) {
+    const dbUser = await db.users.where('username').equalsIgnoreCase(username).first();
+    if (!dbUser) return null;
+    if (dbUser.passwordHash !== await hashPassword(password)) return null;
+
+    const previous = readStoredSession();
+    return {
+      user: {
+        username: dbUser.username,
+        fullName: dbUser.fullName,
+        role: dbUser.role,
+        phone: dbUser.phone || '',
+        email: dbUser.email || ''
+      },
+      // Giữ token cũ nếu còn: nó có thể vẫn hợp lệ, và đồng bộ sẽ chạy lại được
+      // ngay khi có mạng mà không bắt đăng nhập lại.
+      token: previous?.user?.username === dbUser.username ? previous.token : null,
+      offline: true
+    };
+  },
+
+  // Đưa một tài khoản chỉ-có-ở-Dexie lên máy chủ. Trả null nếu không đủ điều kiện.
+  async migrateLocalAccount(username, password) {
+    const dbUser = await db.users.where('username').equalsIgnoreCase(username).first();
+    if (!dbUser) return null;
+    if (dbUser.passwordHash !== await hashPassword(password)) return null;
+
+    try {
+      const { token, user } = await apiFetch('/api/auth/register', {
+        method: 'POST',
+        body: {
+          username: dbUser.username,
+          fullName: dbUser.fullName || dbUser.username,
+          password,
+          role: dbUser.role || 'OWNER',
+          phone: dbUser.phone || '',
+          email: dbUser.email || ''
+        }
+      });
+      await mirrorUserLocally(user, password);
+      return { user, token };
+    } catch (err) {
+      // registration_closed: quán đã có chủ trên máy chủ, và tài khoản cục bộ
+      // này không phải một trong số đó. Đúng là nên từ chối — nếu không thì bất
+      // kỳ ai cài app rồi tự đăng ký cục bộ cũng vào được sổ của quán.
+      console.warn('Không chuyển được tài khoản cục bộ lên máy chủ:', err.message);
+      return null;
+    }
+  },
+
   async updateUserProfile({ username, fullName, phone, email }) {
     const cleanFullName = (fullName || '').trim();
     const cleanPhone = (phone || '').trim();
     const cleanEmail = (email || '').trim();
 
-    if (!cleanFullName) {
-      throw new Error('Vui lòng nhập họ và tên');
-    }
-    if (cleanFullName.length < 2) {
-      throw new Error('Họ và tên quá ngắn');
-    }
+    if (!cleanFullName) throw new Error('Vui lòng nhập họ và tên');
+    if (cleanFullName.length < 2) throw new Error('Họ và tên quá ngắn');
     if (cleanPhone && !/^[0-9]{9,11}$/.test(cleanPhone)) {
       throw new Error('Số điện thoại không hợp lệ (gồm 9 - 11 chữ số)');
     }
 
-    // Update in IndexedDB
+    let updatedUser = null;
+    try {
+      const result = await apiFetch('/api/auth/me', {
+        method: 'PATCH',
+        body: { fullName: cleanFullName, phone: cleanPhone, email: cleanEmail }
+      });
+      updatedUser = result.user;
+    } catch (err) {
+      if (!(err instanceof ApiError) || err.kind !== 'offline') throw new Error(err.message);
+      // Ngoại tuyến: sửa cục bộ để người dùng thấy ngay. Lần đăng nhập sau máy
+      // chủ sẽ ghi đè — hồ sơ tài khoản không nằm trong vòng đồng bộ.
+      updatedUser = null;
+    }
+
     const dbUser = await db.users.where('username').equalsIgnoreCase(username).first();
-    if (!dbUser) {
-      throw new Error('Không tìm thấy tài khoản');
+    if (dbUser) {
+      await db.users.update(dbUser.id, {
+        fullName: cleanFullName, phone: cleanPhone, email: cleanEmail
+      });
     }
 
-    await db.users.update(dbUser.id, {
-      fullName: cleanFullName,
-      phone: cleanPhone,
-      email: cleanEmail
-    });
-
-    // Update session in localStorage
-    const updatedUser = {
-      username: dbUser.username,
-      fullName: cleanFullName,
-      role: dbUser.role,
-      phone: cleanPhone,
-      email: cleanEmail
-    };
-
-    const currentSession = this.getSession();
-    if (currentSession) {
-      currentSession.user = updatedUser;
-      localStorage.setItem(SESSION_KEY, JSON.stringify(currentSession));
+    const session = readStoredSession();
+    if (session) {
+      session.user = updatedUser || {
+        ...session.user,
+        fullName: cleanFullName,
+        phone: cleanPhone,
+        email: cleanEmail
+      };
+      writeStoredSession(session);
     }
-
-    return currentSession;
+    return session;
   },
 
-  // Logout
   logout() {
-    localStorage.removeItem(SESSION_KEY);
+    // Xoá phiên cục bộ trước và không chờ mạng: đăng xuất phải luôn thành công
+    // ngay lập tức. Máy chủ dọn dòng sessions khi nào tới được thì tới.
+    const token = getToken();
+    clearStoredSession();
+    if (token) {
+      // Gửi token thủ công: phiên cục bộ vừa bị xoá nên apiFetch không còn
+      // chỗ nào để đọc ra nó nữa.
+      fetch('/api/auth/logout', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` }
+      }).catch(() => {});
+    }
   }
 };
-
