@@ -24,10 +24,13 @@ html {
     padding-top: env(safe-area-inset-top);
   }
 
-  /* Main content: respect side and bottom safe areas */
+  /* Main content: bottom safe area only.
+     Hai bên trái phải do --page-gutter ở global.css lo, chung với
+     .header-container. Bản cũ đặt padding-left/right ở đây, rồi khối
+     @media (max-width: 639px) bên dưới đặt `padding: 0.75rem` cho CÙNG
+     selector với CÙNG độ ưu tiên — quy tắc sau thắng và phần safe-area bị xoá
+     sạch trên điện thoại mà không ai thấy. */
   .app-container {
-    padding-left:   max(1rem, env(safe-area-inset-left));
-    padding-right:  max(1rem, env(safe-area-inset-right));
     padding-bottom: max(4rem, calc(env(safe-area-inset-bottom) + 1.5rem));
   }
 
@@ -75,8 +78,10 @@ html {
    Only affects header elements, NOT content
 ───────────────────────────────────────────── */
 @media (max-width: 1023px) {
+  /* Padding ngang lấy từ --page-gutter, không đặt ở đây — xem global.css.
+     Đặt riêng chính là thứ làm navbar lệch mép với nội dung trong khoảng
+     640–1023px, tức iPhone xoay ngang. */
   .header-container {
-    padding: 0 0.75rem;
     height: 56px;
     gap: 0.5rem;
   }
@@ -134,9 +139,13 @@ html {
    APP CONTAINER — Phone  (≤ 639px)
 ───────────────────────────────────────────── */
 @media (max-width: 639px) {
+  /* Chỉ padding-top. padding-bottom để khối @supports ở đầu file lo, vì bản
+     ở đó có tính tới vạch home indicator: max(4rem, safe-area + 1.5rem).
+     Khai báo lại 4rem ở đây thì quy tắc này (nằm sau, cùng độ ưu tiên) sẽ
+     thắng và xoá mất phần safe-area — đúng cái bẫy đã làm hỏng padding hai
+     bên trước đây. */
   .app-container {
-    padding: 0.75rem;
-    padding-bottom: 4rem;
+    padding-top: 0.75rem;
   }
 }
 

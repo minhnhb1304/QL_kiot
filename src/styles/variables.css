@@ -43,6 +43,13 @@
   --radius-xl: 24px;
   --radius-full: 9999px;
 
+  /* Lề ngang của trang — dùng chung cho .header-container và .app-container.
+     Hai thứ đó phải bắt đầu ở cùng một mép trái, nếu không navbar và nội dung
+     bên dưới nhìn lệch nhau. Trước đây mỗi bên tự khai báo padding riêng ở một
+     file khác nhau và lệch hẳn trong khoảng 640–1023px (iPhone xoay ngang).
+     Giá trị theo từng breakpoint nằm ở global.css, đúng một chỗ. */
+  --page-gutter: 0.75rem;
+
   --font-family: 'Be Vietnam Pro', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --transition-fast: 0.15s ease;
   --transition-normal: 0.25s ease;

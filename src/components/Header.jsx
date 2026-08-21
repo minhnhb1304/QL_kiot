@@ -210,6 +210,12 @@ export default function Header({
           </button>
         </div>
 
+        {/* Khối giữa cuộn được; đầu và chân drawer đứng yên.
+            Màn hình thấp (iPhone SE, hoặc bất kỳ máy nào xoay ngang) trước đây
+            bị cắt cụt ở đây vì .drawer-panel để overflow: hidden và không con
+            nào cuộn được — nút Đăng xuất bên dưới không với tới. */}
+        <div className="drawer-scroll">
+
         {/* User Info */}
         {currentUser && (
           <div
@@ -314,6 +320,8 @@ export default function Header({
             <span>{theme === 'dark' ? 'Chuyển giao diện sáng' : 'Chuyển giao diện tối'}</span>
           </button>
         </div>
+
+        </div>{/* /.drawer-scroll */}
 
         {/* Bottom: Danger Zone */}
         <div className="drawer-footer">
