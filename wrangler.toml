@@ -15,7 +15,7 @@ pages_build_output_dir = "dist"
 [[d1_databases]]
 binding = "DB"                      # env.DB trong Pages Functions
 database_name = "juice-db"
-database_id = "REPLACE_WITH_YOUR_D1_DATABASE_ID"
+database_id = "b0b61418-c821-40fd-ab90-99f45a2694ec"
 
 # Chạy D1 cục bộ khi phát triển:
 #   npx wrangler pages dev dist --d1 DB=juice-db
