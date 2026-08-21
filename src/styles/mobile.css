@@ -578,6 +578,20 @@ html {
 }
 
 /* ─────────────────────────────────────────────
+   MÁY RẤT HẸP  (≤ 399px)
+   Hàng header không đủ chỗ cho cả 5 nút
+───────────────────────────────────────────── */
+@media (max-width: 399px) {
+  /* Đo được: hamburger + logo cần 92px, hàng nút cần 284px, cộng khoảng cách
+     là 384px — nhiều hơn 375px của iPhone SE. Một thứ phải rời khỏi header.
+     SMS Banking là thao tác thiết lập, không phải việc hằng ngày, và vẫn nằm
+     nguyên trong drawer ở mục THAO TÁC NHANH. */
+  .btn-sms-action {
+    display: none;
+  }
+}
+
+/* ─────────────────────────────────────────────
    FORM INPUTS — Phone  (≤ 639px)
    font-size: 16px prevents iOS auto-zoom on focus
 ───────────────────────────────────────────── */
