@@ -44,17 +44,36 @@ button {
 }
 
 /* Layout Utilities */
+
+/* ── Lề ngang của trang ──────────────────────────────────────────────
+   Đúng MỘT chỗ định nghĩa bề rộng lề theo breakpoint, và đúng MỘT chỗ áp nó
+   lên cả hai container. Trước đây header và nội dung mỗi bên tự khai báo
+   padding riêng ở file riêng, nên trong khoảng 640–1023px nội dung lùi vào
+   2rem còn navbar vẫn 0.75rem — mép trái lệch nhau thấy rõ khi xoay ngang.
+
+   env() trả 0 ở nơi không hỗ trợ, nên max() luôn cho ra --page-gutter và
+   không cần bọc @supports. Gộp safe-area vào cùng một khai báo cũng tránh
+   được cảnh một quy tắc sau đó ghi đè mất phần safe-area. */
+@media (min-width: 640px) { :root { --page-gutter: 1rem; } }
+@media (min-width: 768px) { :root { --page-gutter: 2rem; } }
+
+.header-container,
+.app-container {
+  padding-left:  max(var(--page-gutter), env(safe-area-inset-left));
+  padding-right: max(var(--page-gutter), env(safe-area-inset-right));
+}
+
 .app-container {
   max-width: 1200px;
   width: 100%;
   margin: 0 auto;
-  padding: 1rem;
+  padding-top: 1rem;
   padding-bottom: 5rem;
 }
 
 @media (min-width: 768px) {
   .app-container {
-    padding: 1.5rem 2rem;
+    padding-top: 1.5rem;
     padding-bottom: 3rem;
   }
 }
@@ -225,23 +244,32 @@ select.form-select {
 }
 
 /* Grid Layouts */
+
+/* minmax(0, 1fr) chứ không phải 1fr: 1fr là minmax(auto, 1fr), tức cột KHÔNG
+   co được xuống dưới bề rộng min-content của nội dung. Một con số tiền dài
+   trong thẻ KPI đủ để phình cột ra, làm hai cột rộng khác nhau và đẩy cả
+   trang rộng hơn màn hình. minmax(0, …) cho phép cột co lại đúng như mong đợi. */
 .grid-kpi {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  /* Mọi hàng cao bằng nhau. Trong bốn thẻ KPI chỉ "LÃI RÒNG" có dòng phụ
+     (Tỷ suất), nên nếu để chiều cao tự do thì lưới 2×2 trên điện thoại có
+     hàng dưới cao hơn hàng trên. */
+  grid-auto-rows: 1fr;
   gap: 0.85rem;
   margin-bottom: 1rem;
 }
 
 @media (min-width: 768px) {
   .grid-kpi {
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 1rem;
   }
 }
 
 .grid-charts {
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: minmax(0, 1fr);
   gap: 1rem;
   margin-bottom: 1rem;
   align-items: stretch;
@@ -249,7 +277,7 @@ select.form-select {
 
 @media (min-width: 768px) {
   .grid-charts {
-    grid-template-columns: 1.6fr 1fr;
+    grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
     gap: 1rem;
   }
 }

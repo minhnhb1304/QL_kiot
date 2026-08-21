@@ -93,6 +93,22 @@
   transform: translateX(0);
 }
 
+/* Vùng cuộn giữa drawer.
+   .drawer-panel để overflow: hidden và mọi khối con đều flex-shrink: 0, nên
+   trước đây không có gì cuộn được: màn hình thấp (iPhone SE, hoặc bất kỳ máy
+   nào xoay ngang) là nội dung bị cắt cụt và không với tới nút Đăng xuất ở
+   .drawer-footer. Phần đầu và chân drawer vẫn đứng yên, chỉ khúc giữa cuộn. */
+.drawer-scroll {
+  flex: 1;
+  /* Thiếu dòng này thì flex item không co xuống dưới min-content được và
+     overflow-y: auto trở thành vô nghĩa — nội dung vẫn tràn ra ngoài. */
+  min-height: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  /* Cuộn hết drawer thì dừng, không lây sang trang phía sau */
+  overscroll-behavior: contain;
+}
+
 /* Drawer internal header */
 .drawer-header {
   display: flex;
@@ -266,7 +282,6 @@
   flex-direction: column;
   gap: 0.2rem;
   border-top: 1px solid var(--border-color);
-  flex: 1;
 }
 
 .drawer-action-btn {
@@ -339,7 +354,14 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  flex-shrink: 0;
+  /* CO ĐƯỢC, không phải flex-shrink: 0.
+     Trước đây cả .header-left lẫn .header-actions đều khoá không cho co, mà
+     tên quán thì nowrap không cắt chữ — nên hàng header không có cách nào thu
+     lại: thêm một nút hay đặt tên quán dài là cả trang rộng hơn màn hình, kéo
+     ngang được. Nhường chỗ ở phía thương hiệu là rẻ nhất, vì các nút bên phải
+     đều là thao tác bấm được. */
+  flex-shrink: 1;
+  min-width: 0;
 }
 
 .hamburger-btn {
@@ -381,10 +403,11 @@
   box-shadow: var(--shadow-sm);
 }
 
+/* Padding NGANG cố ý không khai báo ở đây — nó dùng chung --page-gutter với
+   .app-container, đặt tại global.css, để navbar và nội dung luôn thẳng mép. */
 .header-container {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 0 1rem;
   height: 60px;
   display: flex;
   align-items: center;
@@ -411,11 +434,17 @@
   flex-shrink: 0;
 }
 
+.brand-text {
+  min-width: 0;   /* thiếu dòng này thì con bên trong không ellipsis được */
+}
+
 .brand-text h1 {
   font-size: 1.15rem;
   font-weight: 800;
   letter-spacing: -0.5px;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
   background: linear-gradient(135deg, var(--primary-600), var(--accent-orange-600));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -462,6 +491,8 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  /* Giữ nguyên kích thước: đây toàn là nút bấm, co lại thì khó chạm trúng.
+     Phần phải nhường chỗ là .header-left ở trên. */
   flex-shrink: 0;
 }
 
@@ -563,6 +594,11 @@
   flex-direction: column;
   gap: 0.5rem;
   padding: 1.25rem 1.5rem;
+  /* minmax(0, 1fr) ở .grid-kpi chỉ cho RÃNH lưới co lại; bản thân ô lưới vẫn
+     mặc định min-width: auto, tức không hẹp hơn nội dung tối thiểu của nó
+     được. Tiêu đề dài nhất ("QUỸ NGÂN HÀNG") cộng badge vượt rãnh vài pixel là
+     thẻ lòi ra khỏi lưới và cả trang kéo ngang được. */
+  min-width: 0;
 }
 
 .kpi-header {
@@ -570,6 +606,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 0.5rem;
+  min-width: 0;
 }
 
 .kpi-title {
@@ -579,12 +616,19 @@
   color: var(--text-muted);
   text-transform: uppercase;
   white-space: nowrap;
+  /* Thẻ hẹp thì cắt bớt tiêu đề, chứ không đẩy badge lòi ra ngoài.
+     .badge đã flex-shrink: 0 (global.css) nên phần nhường chỗ là tiêu đề. */
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .kpi-body {
   display: flex;
   flex-direction: column;
   gap: 0.4rem;
+  /* Chiếm hết phần còn lại của thẻ để dòng phụ bên dưới tụt được xuống đáy */
+  flex: 1;
 }
 
 .kpi-amount {
@@ -602,6 +646,9 @@
   align-items: center;
   gap: 0.5rem;
   font-size: 0.75rem;
+  /* Ép xuống đáy thẻ. Chỉ "LÃI RÒNG" có dòng này; không đẩy xuống thì con số
+     của nó nằm cao hơn con số ở ba thẻ kia. */
+  margin-top: auto;
 }
 
 .kpi-subtitle {
@@ -769,13 +816,13 @@
 
 .fund-grid {
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: minmax(0, 1fr);
   gap: 0.75rem;
 }
 
 @media (min-width: 640px) {
   .fund-grid {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   }
 }
 
