@@ -69,13 +69,12 @@ export default function App() {
     }
   }, []);
 
-  // Load store profile when session is available
+  // Load store profile when session is available.
+  // Hồ sơ cửa hàng dùng chung cho cả quán nên không phụ thuộc tài khoản đăng
+  // nhập — chủ hay nhân viên đều thấy và sửa cùng một hồ sơ.
   useEffect(() => {
     if (session?.user) {
-      const ownerUsername = session.user.role === 'OWNER'
-        ? session.user.username
-        : 'admin';
-      storeProfileService.getOrCreateProfile(ownerUsername)
+      storeProfileService.getOrCreateProfile()
         .then(setStoreProfile)
         .catch(err => console.error('Error loading store profile:', err));
     }
@@ -83,10 +82,7 @@ export default function App() {
 
   const handleUpdateStoreProfile = async (updates) => {
     if (!session?.user) return;
-    const ownerUsername = session.user.role === 'OWNER'
-      ? session.user.username
-      : 'admin';
-    const updated = await storeProfileService.updateProfile(ownerUsername, updates);
+    const updated = await storeProfileService.updateProfile(updates);
     setStoreProfile(updated);
     showToast('Đã cập nhật hồ sơ cửa hàng', 'success');
   };

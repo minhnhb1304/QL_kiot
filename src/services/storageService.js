@@ -1,4 +1,26 @@
 import { db, seedInitialData } from './db';
+import { newUuid, syncNow } from '../utils/uuid';
+
+// Dấu đồng bộ cho dòng MỚI tạo ở thiết bị này
+function stampNew() {
+  const now = syncNow();
+  return { uuid: newUuid(), created_at: now, updated_at: now, deleted: 0, _dirty: 1, server_seq: 0 };
+}
+
+// Dấu đồng bộ cho dòng ĐƯỢC SỬA ở thiết bị này
+function stampUpdate() {
+  return { updated_at: syncNow(), _dirty: 1 };
+}
+
+// Tombstone: xóa mềm để lệnh xóa lan được sang thiết bị khác
+function stampDelete() {
+  return { deleted: 1, updated_at: syncNow(), _dirty: 1 };
+}
+
+// Bỏ các dòng đã xóa mềm khỏi kết quả đọc
+function alive(row) {
+  return !row.deleted;
+}
 
 // Unified Storage Service: Local IndexedDB (Dexie) + Cloudflare D1 API Adapter
 class StorageService {
@@ -35,7 +57,7 @@ class StorageService {
     await this.init();
     let collection = db.transactions.orderBy('transaction_date').reverse();
 
-    let items = await collection.toArray();
+    let items = (await collection.toArray()).filter(alive);
 
     // Apply filters in memory for local mode
     if (filters.startDate && filters.endDate) {
@@ -71,7 +93,7 @@ class StorageService {
     const newTx = {
       ...transaction,
       amount: Number(transaction.amount),
-      created_at: new Date().toISOString()
+      ...stampNew()
     };
     const id = await db.transactions.add(newTx);
     return { ...newTx, id };
@@ -105,7 +127,7 @@ class StorageService {
       payment_source: 'BANK',
       note: `[SMS Tự Động ${sender}] ${smsText.substring(0, 100)}`,
       transaction_date: dateStr,
-      created_at: new Date().toISOString()
+      ...stampNew()
     };
 
     const id = await db.transactions.add(newTx);
@@ -135,10 +157,10 @@ class StorageService {
     };
   }
 
-  // Delete transaction
+  // Delete transaction (xóa mềm để đồng bộ được sang thiết bị khác)
   async deleteTransaction(id) {
     await this.init();
-    await db.transactions.delete(id);
+    await db.transactions.update(id, stampDelete());
     return true;
   }
 
@@ -148,8 +170,10 @@ class StorageService {
     const updatedTx = {
       ...updates,
       amount: Number(updates.amount),
-      updated_at: new Date().toISOString()
+      ...stampUpdate()
     };
+    // uuid là danh tính đồng bộ, không được ghi đè khi sửa
+    delete updatedTx.uuid;
     await db.transactions.update(id, updatedTx);
     return { id, ...updatedTx };
   }
@@ -262,15 +286,15 @@ class StorageService {
   // Phase 3: Get total transaction count all-time
   async getTotalTransactionCount() {
     await this.init();
-    return await db.transactions.count();
+    return await db.transactions.filter(alive).count();
   }
 
   // Phase 3: Get peak revenue month
   async getPeakRevenueMonth() {
     await this.init();
-    const allTx = await db.transactions
+    const allTx = (await db.transactions
       .where('type').equals('IN')
-      .toArray();
+      .toArray()).filter(alive);
 
     if (allTx.length === 0) return null;
 
@@ -305,7 +329,7 @@ class StorageService {
   async getDailyCashRecords(filters = {}) {
     await this.init();
     let collection = db.daily_cash_records.orderBy('date').reverse();
-    let items = await collection.toArray();
+    let items = (await collection.toArray()).filter(alive);
 
     if (filters.startDate && filters.endDate) {
       items = items.filter(r => r.date >= filters.startDate && r.date <= filters.endDate);
@@ -316,16 +340,16 @@ class StorageService {
   async getDailyCashByDate(date) {
     await this.init();
     const record = await db.daily_cash_records.where('date').equals(date).first();
-    return record || null;
+    return record && alive(record) ? record : null;
   }
 
   async getYesterdayClosingCash(currentDate) {
     await this.init();
-    const records = await db.daily_cash_records
+    const records = (await db.daily_cash_records
       .where('date')
       .below(currentDate)
       .reverse()
-      .sortBy('date');
+      .sortBy('date')).filter(alive);
     if (records.length > 0) {
       return records[0].closing_cash || 0;
     }
@@ -338,9 +362,11 @@ class StorageService {
     const closeVal = Number(closing_cash) || 0;
     const totalCash = closeVal - openVal; // Hiệu = Cuối ngày - Đầu ngày
 
+    // Cố ý KHÔNG lọc tombstone ở đây: `date` là UNIQUE, nên nếu bản ghi của
+    // ngày này từng bị xóa mềm thì phải hồi sinh chính dòng đó (deleted: 0),
+    // chứ thêm dòng mới sẽ vi phạm ràng buộc UNIQUE.
     const existing = await db.daily_cash_records.where('date').equals(date).first();
     let recordId;
-    const nowIso = new Date().toISOString();
 
     if (existing) {
       recordId = existing.id;
@@ -349,7 +375,8 @@ class StorageService {
         closing_cash: closeVal,
         total_cash: totalCash,
         note: note,
-        updated_at: nowIso
+        deleted: 0,
+        ...stampUpdate()
       });
     } else {
       recordId = await db.daily_cash_records.add({
@@ -358,8 +385,7 @@ class StorageService {
         closing_cash: closeVal,
         total_cash: totalCash,
         note: note,
-        created_at: nowIso,
-        updated_at: nowIso
+        ...stampNew()
       });
     }
 
@@ -368,13 +394,14 @@ class StorageService {
       const formattedDate = date.split('-').reverse().join('/');
       const syncNote = `[Chốt tiền mặt ${formattedDate}] ${note ? `(${note})` : ''}`.trim();
       
-      const allTxForDate = await db.transactions.where('transaction_date').equals(date).toArray();
+      const allTxForDate = (await db.transactions.where('transaction_date').equals(date).toArray()).filter(alive);
       const existingSyncTx = allTxForDate.find(t => t.note && t.note.includes('[Chốt tiền mặt'));
 
       if (existingSyncTx) {
         await db.transactions.update(existingSyncTx.id, {
           amount: totalCash,
-          note: syncNote
+          note: syncNote,
+          ...stampUpdate()
         });
       } else {
         const categories = await this.getCategories();
@@ -387,7 +414,7 @@ class StorageService {
           payment_source: 'CASH',
           note: syncNote,
           transaction_date: date,
-          created_at: nowIso
+          ...stampNew()
         });
       }
     }
@@ -404,55 +431,50 @@ class StorageService {
 
   async deleteDailyCashRecord(id) {
     await this.init();
-    await db.daily_cash_records.delete(id);
+    await db.daily_cash_records.update(id, stampDelete());
     return true;
   }
 
   // ── Quick Notes (Ghi Chú Nhanh) ──
   async getQuickNotes() {
     await this.init();
-    return await db.quick_notes.orderBy('created_at').reverse().toArray();
+    return (await db.quick_notes.orderBy('created_at').reverse().toArray()).filter(alive);
   }
 
   async addQuickNote({ text, color = '#10B981' }) {
     await this.init();
-    const now = new Date().toISOString();
-    const id = await db.quick_notes.add({
-      text,
-      is_done: false,
-      color,
-      created_at: now,
-      updated_at: now
-    });
-    return { id, text, is_done: false, color, created_at: now, updated_at: now };
+    const note = { text, is_done: false, color, ...stampNew() };
+    const id = await db.quick_notes.add(note);
+    return { ...note, id };
   }
 
   async toggleQuickNote(id) {
     await this.init();
     const note = await db.quick_notes.get(id);
     if (!note) return null;
-    const updated = { is_done: !note.is_done, updated_at: new Date().toISOString() };
+    const updated = { is_done: !note.is_done, ...stampUpdate() };
     await db.quick_notes.update(id, updated);
     return { ...note, ...updated };
   }
 
   async updateQuickNote(id, updates) {
     await this.init();
-    const updated = { ...updates, updated_at: new Date().toISOString() };
+    const updated = { ...updates, ...stampUpdate() };
+    delete updated.uuid;
     await db.quick_notes.update(id, updated);
     return { id, ...updated };
   }
 
   async deleteQuickNote(id) {
     await this.init();
-    await db.quick_notes.delete(id);
+    await db.quick_notes.update(id, stampDelete());
     return true;
   }
 
   // ── Quick Expense Presets (Mẫu nhập nhanh chi phí thường dùng) ──
   async getExpensePresets() {
     await this.init();
-    const items = await db.expense_presets.toArray();
+    const items = (await db.expense_presets.toArray()).filter(alive);
     return items.sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
   }
 
@@ -469,7 +491,7 @@ class StorageService {
       category_name: preset.category_name,
       payment_source: preset.payment_source || 'CASH',
       sort_order: maxOrder + 1,
-      created_at: new Date().toISOString()
+      ...stampNew()
     };
 
     const id = await db.expense_presets.add(newPreset);
@@ -485,7 +507,7 @@ class StorageService {
       category_id: Number(updates.category_id),
       category_name: updates.category_name,
       payment_source: updates.payment_source || 'CASH',
-      updated_at: new Date().toISOString()
+      ...stampUpdate()
     };
     await db.expense_presets.update(id, patch);
     return { id, ...patch };
@@ -493,7 +515,7 @@ class StorageService {
 
   async deleteExpensePreset(id) {
     await this.init();
-    await db.expense_presets.delete(id);
+    await db.expense_presets.update(id, stampDelete());
     return true;
   }
 }

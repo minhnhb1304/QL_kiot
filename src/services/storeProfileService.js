@@ -1,16 +1,23 @@
 import { db } from './db';
+import { syncNow } from '../utils/uuid';
+
+// MỘT hồ sơ dùng chung cho cả quán, uuid cố định 'default' — khớp với dòng seed
+// duy nhất của bảng store_profile trên D1 (schema.sql:9). Mọi tài khoản, chủ hay
+// nhân viên, đều đọc và sửa cùng một hồ sơ. Xem chú thích db.version(10).
+const PROFILE_UUID = 'default';
 
 export const storeProfileService = {
-  async getProfile(ownerUsername) {
-    return await db.store_profile
-      .where('owner_username')
-      .equals(ownerUsername)
-      .first() || null;
+  async getProfile() {
+    // Đọc theo uuid chứ không theo id: id tự tăng khác nhau giữa các máy,
+    // uuid thì giống nhau ở mọi nơi.
+    return await db.store_profile.where('uuid').equals(PROFILE_UUID).first()
+      // Đường lùi cho database chưa qua v10 (hoặc hồ sơ tạo tay thiếu uuid).
+      || await db.store_profile.toCollection().first()
+      || null;
   },
 
-  async createProfile(ownerUsername) {
+  async createProfile() {
     const profile = {
-      owner_username: ownerUsername,
       storeName: '',
       storeSlogan: '',
       storeLogo: null,
@@ -22,14 +29,19 @@ export const storeProfileService = {
       monthlyRevenueGoal: 0,
       financialMonthStartDay: 1,
       storeNotes: '',
-      updated_at: new Date().toISOString()
+      uuid: PROFILE_UUID,
+      created_at: syncNow(),
+      updated_at: syncNow(),
+      deleted: 0,
+      _dirty: 1,
+      server_seq: 0
     };
     const id = await db.store_profile.add(profile);
     return { ...profile, id };
   },
 
-  async updateProfile(ownerUsername, updates) {
-    const existing = await this.getProfile(ownerUsername);
+  async updateProfile(updates) {
+    const existing = await this.getProfile();
     if (!existing) throw new Error('Profile không tồn tại');
 
     // Validate storeName
@@ -55,24 +67,31 @@ export const storeProfileService = {
       updates.monthlyRevenueGoal = goal;
     }
 
-    updates.updated_at = new Date().toISOString();
+    updates.updated_at = syncNow();
+    updates._dirty = 1;
+    delete updates.uuid;
     await db.store_profile.update(existing.id, updates);
     return { ...existing, ...updates };
   },
 
-  async getOrCreateProfile(ownerUsername) {
-    let profile = await this.getProfile(ownerUsername);
+  async getOrCreateProfile() {
+    let profile = await this.getProfile();
     if (!profile) {
-      profile = await this.createProfile(ownerUsername);
+      profile = await this.createProfile();
+    }
+    // Hồ sơ tạo trước v9 chưa có uuid — gán bổ sung để đồng bộ được
+    if (profile.uuid !== PROFILE_UUID) {
+      await db.store_profile.update(profile.id, { uuid: PROFILE_UUID });
+      profile.uuid = PROFILE_UUID;
     }
     return profile;
   },
 
   async calculateStreak() {
-    const transactions = await db.transactions
+    const transactions = (await db.transactions
       .orderBy('transaction_date')
       .reverse()
-      .toArray();
+      .toArray()).filter(t => !t.deleted);
 
     if (transactions.length === 0) return 0;
 
