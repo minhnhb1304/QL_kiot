@@ -8,7 +8,7 @@
 # Lưu ý: Pages Functions trong ./functions CHỈ chạy trên Cloudflare Pages.
 # Deploy lên Vercel sẽ build thành công nhưng mọi /api/* trả về 404.
 
-name = "juiceledger"
+name = "ql-kiot"
 compatibility_date = "2026-08-17"
 pages_build_output_dir = "dist"
 
