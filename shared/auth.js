@@ -164,12 +164,15 @@ export function publicUser(row) {
 // ─────────────────────────────────────────────────────────
 // Cổng chung cho các endpoint dữ liệu
 //
-// Chấp nhận HAI đường vào:
+// Chấp nhận HAI đường vào, không có đường thứ ba:
 //   - phiên đăng nhập  → app trong trình duyệt
 //   - x-sync-secret    → máy-với-máy (scripts/test-sync-api.mjs, curl chẩn đoán)
 //
-// Chưa đặt SYNC_SECRET và cũng chưa có tài khoản nào thì để mở, nếu không lần
-// deploy đầu tiên sẽ tự khoá mình ra ngoài trước khi kịp đăng ký chủ quán.
+// KHÔNG có ngoại lệ "chưa cấu hình gì thì để mở". Nghe thì tiện cho lần chạy
+// đầu, nhưng nó có nghĩa là bất kỳ deploy nào chưa kịp đặt SYNC_SECRET và chưa
+// có tài khoản đều phơi nguyên cả sổ ra Internet — đúng cảnh môi trường preview
+// rơi vào. Mà cũng không cần: /api/auth/register tự kiểm tra bảng users chứ
+// không đi qua cổng này, nên chủ quán vẫn đăng ký được từ một hệ thống đóng kín.
 // ─────────────────────────────────────────────────────────
 export async function authorizeDataRequest(env, request, bodySecret = null) {
   const provided = request.headers.get('x-sync-secret') || bodySecret;
@@ -179,11 +182,6 @@ export async function authorizeDataRequest(env, request, bodySecret = null) {
 
   const user = await getSessionUser(env, request);
   if (user) return { ok: true, via: 'session', user };
-
-  const { total } = await env.DB.prepare('SELECT COUNT(*) AS total FROM users').first();
-  if (total === 0 && !env.SYNC_SECRET) {
-    return { ok: true, via: 'bootstrap', user: null };
-  }
 
   return { ok: false, via: null, user: null };
 }
