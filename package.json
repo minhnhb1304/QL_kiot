@@ -9,7 +9,9 @@
     "lint": "oxlint",
     "preview": "vite preview",
     "test:api": "node scripts/test-sync-api.mjs",
-    "test:db": "node scripts/test-db-upgrade.mjs"
+    "test:db": "node scripts/test-db-upgrade.mjs",
+    "test:sync": "node scripts/test-sync-client.mjs",
+    "test:devices": "node scripts/test-two-devices.mjs"
   },
   "dependencies": {
     "chart.js": "^4.5.1",

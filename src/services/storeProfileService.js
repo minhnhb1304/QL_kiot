@@ -1,5 +1,5 @@
-import { db } from './db';
-import { syncNow } from '../utils/uuid';
+import { db } from './db.js';
+import { syncNow } from '../utils/uuid.js';
 
 // MỘT hồ sơ dùng chung cho cả quán, uuid cố định 'default' — khớp với dòng seed
 // duy nhất của bảng store_profile trên D1 (schema.sql:9). Mọi tài khoản, chủ hay

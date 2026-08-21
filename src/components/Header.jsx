@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import SyncStatus from './SyncStatus';
 import {
   Citrus, PlusCircle, Sun, Moon, BarChart2, BookOpen,
   LogOut, UserCheck, Smartphone, Menu, X,
@@ -14,6 +15,8 @@ export default function Header({
   theme,
   toggleTheme,
   currentUser,
+  syncState,
+  onSyncNow,
   onLogout,
   onEditProfile,
   storeProfile
@@ -132,6 +135,8 @@ export default function Header({
               <Smartphone size={13} color="var(--primary-600)" />
               <span className="btn-sms-text">SMS Bank</span>
             </button>
+
+            <SyncStatus state={syncState} onClick={onSyncNow} />
 
             {currentUser && (
               <div

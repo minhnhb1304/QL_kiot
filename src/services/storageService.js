@@ -1,5 +1,5 @@
-import { db, seedInitialData } from './db';
-import { newUuid, syncNow } from '../utils/uuid';
+import { db, seedInitialData } from './db.js';
+import { newUuid, syncNow } from '../utils/uuid.js';
 
 // Dấu đồng bộ cho dòng MỚI tạo ở thiết bị này
 function stampNew() {

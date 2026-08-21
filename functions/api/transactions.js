@@ -7,6 +7,12 @@
 //   - phản hồi trả uuid; last_row_id vô nghĩa với khóa chính kiểu TEXT
 
 import { json, bumpSeq, SEQ_EXPR } from '../../shared/d1.js';
+import { authorizeDataRequest } from '../../shared/auth.js';
+
+// Endpoint này trả nguyên cả sổ, nên phải qua cùng một cổng như /api/sync.
+// Trước đây nó hoàn toàn để mở: GET /api/transactions đọc được toàn bộ doanh
+// thu của quán mà không cần gì cả.
+const DENIED = { error: 'Unauthorized', code: 'unauthorized' };
 
 export async function onRequestGet(context) {
   const { env, request } = context;
@@ -15,6 +21,8 @@ export async function onRequestGet(context) {
   const endDate = url.searchParams.get('endDate');
 
   try {
+    if (!(await authorizeDataRequest(env, request)).ok) return json(DENIED, 401);
+
     let query = `SELECT * FROM transactions WHERE deleted = 0`;
     const params = [];
 
@@ -35,6 +43,8 @@ export async function onRequestGet(context) {
 export async function onRequestPost(context) {
   const { env, request } = context;
   try {
+    if (!(await authorizeDataRequest(env, request)).ok) return json(DENIED, 401);
+
     const data = await request.json();
     const { type, category_id, category_name, amount, payment_source, note, transaction_date } = data;
 
@@ -62,6 +72,8 @@ export async function onRequestPost(context) {
 export async function onRequestDelete(context) {
   const { env, request } = context;
   try {
+    if (!(await authorizeDataRequest(env, request)).ok) return json(DENIED, 401);
+
     const url = new URL(request.url);
     const uuid = url.searchParams.get('uuid');
     if (!uuid) return json({ error: 'Thiếu tham số uuid' }, 400);
